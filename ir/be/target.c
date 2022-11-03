@@ -41,6 +41,8 @@ int ir_target_set_triple(ir_machine_triple_t const *machine)
 		isa = &riscv32_isa_if;
 	} else if (streq(cpu, "TEMPLATE")) {
 		isa = &TEMPLATE_isa_if;
+	} else if (streq(cpu, "bpf")) {
+		isa = &bpf_isa_if;
 	} else {
 		return false;
 	}
