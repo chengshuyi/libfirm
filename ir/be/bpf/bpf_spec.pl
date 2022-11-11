@@ -3,7 +3,6 @@ $arch = "bpf";
 
 # Modes
 $mode_gp = "mode_Iu"; # mode used by general purpose registers
-$mode_fp = "mode_F";  # mode used by floatingpoint registers
 
 # The node description is done as a perl hash initializer with the
 # following structure:
@@ -33,51 +32,27 @@ $mode_fp = "mode_F";  # mode used by floatingpoint registers
 	gp => {
 		mode => $mode_gp,
 		registers => [
-			{ name => "r0"  },
-			{ name => "r1"  },
+			{ name => "r0"  }, 
+			{ name => "r1"  }, # r1 - r5: arguments
 			{ name => "r2"  },
 			{ name => "r3"  },
 			{ name => "r4"  },
 			{ name => "r5"  },
-			{ name => "r6"  },
+			{ name => "r6"  },  # context pointer
 			{ name => "r7"  },
 			{ name => "r8"  },
 			{ name => "r9"  },
-			{ name => "r10" },
-			{ name => "r11" },
-			{ name => "r12" },
-			{ name => "r13" },
-			{ name => "sp"  }, # stackpointer
-			{ name => "bp"  }, # basepointer
+			{ name => "r10" },  # framepointer
 		]
 	},
-	fp => {
-		mode => $mode_fp,
-		registers => [
-			{ name => "f0"  },
-			{ name => "f1"  },
-			{ name => "f2"  },
-			{ name => "f3"  },
-			{ name => "f4"  },
-			{ name => "f5"  },
-			{ name => "f6"  },
-			{ name => "f7"  },
-			{ name => "f8"  },
-			{ name => "f9"  },
-			{ name => "f10" },
-			{ name => "f11" },
-			{ name => "f12" },
-			{ name => "f13" },
-			{ name => "f14" },
-			{ name => "f15" },
-		]
-	}
 );
 
+# 定义一些私有的attr类型
 %init_attr = (
 	bpf_attr_t => ""
 );
 
+# rematerializable: 表示是否可以重新计算，而不用spill/reload
 my $binop = {
 	irn_flags => [ "rematerializable" ],
 	in_reqs   => [ "gp", "gp" ],
@@ -85,17 +60,13 @@ my $binop = {
 	emit      => '%D0 = {name} %S0, %S1',
 };
 
+# constant value
 my $constop = {
 	op_flags   => [ "constlike" ],
 	irn_flags  => [ "rematerializable" ],
 	out_reqs   => [ "gp" ],
 };
 
-my $fbinop = {
-	in_reqs   => [ "fp", "fp" ],
-	out_reqs  => [ "fp" ],
-	emit      => '%D0 = {name} %S0, %S1',
-};
 
 my $unop = {
 	irn_flags => [ "rematerializable" ],
@@ -175,60 +146,6 @@ Store => {
 	ins       => [ "mem", "ptr", "val" ],
 	outs      => [ "M" ],
 	emit      => '(%S1) = store %S2',
-},
-
-# Floating Point operations
-
-fAdd => {
-	template  => $fbinop,
-	irn_flags => [ "rematerializable" ],
-},
-
-fMul => { template => $fbinop },
-
-fSub => {
-	template  => $fbinop,
-	irn_flags => [ "rematerializable" ],
-},
-
-fDiv => { template => $fbinop },
-
-fMinus => {
-	irn_flags => [ "rematerializable" ],
-	in_reqs   => [ "fp" ],
-	out_reqs  => [ "fp" ],
-	emit      => '%D0 = fneg %S0',
-},
-
-fConst => {
-	op_flags  => [ "constlike" ],
-	irn_flags => [ "rematerializable" ],
-	out_reqs  => [ "fp" ],
-	emit      => '%D0 = fconst %I',
-},
-
-# Load / Store
-
-fLoad => {
-	op_flags  => [ "uses_memory" ],
-	irn_flags => [ "rematerializable" ],
-	state     => "exc_pinned",
-	in_reqs   => [ "mem", "gp" ],
-	out_reqs  => [ "fp", "mem" ],
-	ins       => [ "mem", "ptr" ],
-	outs      => [ "res", "M" ],
-	emit      => '%D0 = fload (%S1)',
-},
-
-fStore => {
-	op_flags  => [ "uses_memory" ],
-	irn_flags => [ "rematerializable" ],
-	state     => "exc_pinned",
-	in_reqs   => [ "mem", "gp", "fp" ],
-	out_reqs  => [ "mem" ],
-	ins       => [ "mem", "ptr", "val" ],
-	outs      => [ "M" ],
-	emit      => '(%S1) = fstore %S2',
 },
 
 );
