@@ -25,6 +25,11 @@
 #include "xmalloc.h"
 #include <stdlib.h>
 
+bool bpf_has_load_store_attr(const ir_node *node)
+{
+	return is_bpf_Load(node) || is_bpf_Store(node);
+}
+
 void bpf_dump_node(FILE *F, const ir_node *n, dump_reason_t reason)
 {
 	switch (reason) {
@@ -47,6 +52,27 @@ void bpf_dump_node(FILE *F, const ir_node *n, dump_reason_t reason)
 	}
 }
 
+void bpf_set_imm_attr(ir_node *res, int32_t imm)
+{
+	bpf_imm_attr_t *attr = (bpf_imm_attr_t *)get_irn_generic_attr(res);
+	attr->imm = imm;
+	arch_add_irn_flags(res, (arch_irn_flags_t)bpf_arch_irn_flag_immediate_form);
+}
+
+bpf_load_store_attr_t *get_bpf_load_store_attr(ir_node *node)
+{
+	assert(bpf_has_load_store_attr(node));
+	return (bpf_load_store_attr_t*) get_irn_generic_attr_const(node);
+}
+
+void init_bpf_load_store_attributes(ir_node *res, uint16_t offset, int32_t imm, bool is_imm)
+{
+	bpf_load_store_attr_t *attr     = get_bpf_load_store_attr(res);
+	attr->imm = imm;
+	attr->is_imm = is_imm;
+	attr->offset = offset;
+}
+
 const bpf_attr_t *get_bpf_attr_const(const ir_node *node)
 {
 	assert(is_bpf_irn(node) && "need bpf node to get attributes");
@@ -62,15 +88,23 @@ bpf_attr_t *get_bpf_attr(ir_node *node)
 void set_bpf_value(ir_node *const node, ir_entity *const entity,
                         ir_tarval *const value)
 {
-	bpf_attr_t *attr = get_bpf_attr(node);
-	attr->entity = entity;
-	attr->value  = value;
+	(void)node;
+	(void)value;
+	(void)entity;
+	
+	// bpf_attr_t *attr = get_bpf_attr(node);
+	// attr->entity = entity;
+	// attr->value  = value;
 }
 
 int bpf_attrs_equal(const ir_node *a, const ir_node *b)
 {
-	const bpf_attr_t *attr_a = get_bpf_attr_const(a);
-	const bpf_attr_t *attr_b = get_bpf_attr_const(b);
-	return attr_a->value == attr_b->value
-	    && attr_a->entity == attr_b->entity;
+	(void)a;
+	(void)b;
+	// const bpf_attr_t *attr_a = get_bpf_attr_const(a);
+	// const bpf_attr_t *attr_b = get_bpf_attr_const(b);
+	// return attr_a->value == attr_b->value
+	//     && attr_a->entity == attr_b->entity;
+	return 0;
 }
+

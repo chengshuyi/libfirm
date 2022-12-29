@@ -24,16 +24,17 @@
 
 static void bpf_emit_immediate(const ir_node *node)
 {
-	bpf_attr_t const *const attr = get_bpf_attr_const(node);
-	ir_entity             *const ent  = attr->entity;
-	ir_tarval             *const val  = attr->value;
-	if (ent) {
-		be_emit_irprintf("&%s", get_entity_ld_name(ent));
-		if (val)
-			be_emit_char('+');
-	}
-	if (val)
-		be_emit_irprintf("%T", val);
+	(void)node;
+	// bpf_attr_t const *const attr = get_bpf_attr_const(node);
+	// ir_entity             *const ent  = attr->entity;
+	// ir_tarval             *const val  = attr->value;
+	// if (ent) {
+	// 	be_emit_irprintf("&%s", get_entity_ld_name(ent));
+	// 	if (val)
+	// 		be_emit_char('+');
+	// }
+	// if (val)
+	// 	be_emit_irprintf("%T", val);
 }
 
 static void emit_register(const arch_register_t *reg)

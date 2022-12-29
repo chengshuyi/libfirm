@@ -96,6 +96,7 @@ void be_init_modules(void)
 	be_init_arch_amd64();
 	be_init_arch_riscv32();
 	be_init_arch_TEMPLATE();
+	be_init_arch_bpf();
 
 	be_init_listsched();
 	be_init_sched_normal();

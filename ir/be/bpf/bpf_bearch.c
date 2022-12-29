@@ -62,28 +62,30 @@ static const regalloc_if_t bpf_regalloc_if = {
 	.new_reload  = bpf_new_reload,
 };
 
-static void introduce_prologue(ir_graph *const irg)
-{
-	ir_node  *const start      = get_irg_start(irg);
-	ir_node  *const block      = get_nodes_block(start);
-	ir_node  *const initial_sp = be_get_Start_proj(irg, &bpf_registers[REG_SP]);
-	ir_type  *const frame_type = get_irg_frame_type(irg);
-	unsigned  const frame_size = get_type_size(frame_type);
-	ir_node  *const incsp      = be_new_IncSP(block, initial_sp, frame_size, false);
-	edges_reroute_except(initial_sp, incsp, incsp);
-	sched_add_after(start, incsp);
-}
+// static void introduce_prologue(ir_graph *const irg)
+// {
+// 	ir_node  *const start      = get_irg_start(irg);
+// 	ir_node  *const block      = get_nodes_block(start);
+// 	ir_node  *const initial_sp = be_get_Start_proj(irg, &bpf_registers[REG_SP]);
+// 	ir_type  *const frame_type = get_irg_frame_type(irg);
+// 	unsigned  const frame_size = get_type_size(frame_type);
+// 	ir_node  *const incsp      = be_new_IncSP(block, initial_sp, frame_size, false);
+// 	edges_reroute_except(initial_sp, incsp, incsp);
+// 	sched_add_after(start, incsp);
+// }
 
 static void bpf_generate_code(FILE *output, const char *cup_name)
 {
 	be_begin(output, cup_name);
 	unsigned *const sp_is_non_ssa = rbitset_alloca(N_BPF_REGISTERS);
-	rbitset_set(sp_is_non_ssa, REG_SP);
+	rbitset_set(sp_is_non_ssa, REG_R10);
 
 	foreach_irp_irg(i, irg) {
 		if (!be_step_first(irg))
 			continue;
 
+		struct obstack *obst = be_get_be_obst(irg);
+		// be_birg_from_irg(irg)->isa_link = OALLOCZ(obst, bpf_irg_data_t);
 		be_birg_from_irg(irg)->non_ssa_regs = sp_is_non_ssa;
 		bpf_select_instructions(irg);
 
@@ -91,9 +93,9 @@ static void bpf_generate_code(FILE *output, const char *cup_name)
 
 		be_step_regalloc(irg, &bpf_regalloc_if);
 
-		introduce_prologue(irg);
+		// introduce_prologue(irg);
 
-		be_fix_stack_nodes(irg, &bpf_registers[REG_SP]);
+		be_fix_stack_nodes(irg, &bpf_registers[REG_R10]);
 		be_birg_from_irg(irg)->non_ssa_regs = NULL;
 
 		bpf_emit_function(irg);
@@ -143,10 +145,10 @@ static unsigned bpf_get_op_estimated_cost(const ir_node *node)
 
 arch_isa_if_t const bpf_isa_if = {
 	.name                  = "bpf",
-	.pointer_size          = 4,
+	.pointer_size          = 8,
 	.modulo_shift          = 32,
 	.big_endian            = false,
-	.po2_biggest_alignment = 3,
+	.po2_biggest_alignment = 4,
 	.pic_supported         = false,
 	.n_registers           = N_BPF_REGISTERS,
 	.registers             = bpf_registers,

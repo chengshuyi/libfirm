@@ -158,6 +158,10 @@ void ir_platform_set(ir_machine_triple_t const *machine,
 	} else if (streq(cpu, "TEMPLATE")) {
 		ir_platform.long_double_size  = 8;
 		ir_platform.long_double_align = 8;
+	} else if (streq(cpu, "bpf")) {
+		// It doesn't matter to set these value cause eBPF doesn't support double type.
+		ir_platform.long_double_size = 8;
+		ir_platform.long_double_align = 8;
 	} else {
 		/** Everything that passes ir_init_target_from_triple()
 		 * should work here as well. */

@@ -49,15 +49,27 @@ $mode_gp = "mode_Iu"; # mode used by general purpose registers
 
 # 定义一些私有的attr类型
 %init_attr = (
-	bpf_attr_t => ""
+	bpf_attr_t => "",
+	bpf_load_store_attr_t => ""
 );
 
 # rematerializable: 表示是否可以重新计算，而不用spill/reload
 my $binop = {
 	irn_flags => [ "rematerializable" ],
-	in_reqs   => [ "gp", "gp" ],
 	out_reqs  => [ "gp" ],
-	emit      => '%D0 = {name} %S0, %S1',
+
+	constructors => {
+		imm => {
+			attr => "int32_t imm32_value",
+			init => "bpf_set_imm_attr(res, imm32_value);",
+			in_reqs => ["gp"],
+			ins => ["left"],
+		},
+		reg => {
+			in_reqs => ["gp", "gp"],
+			ins => ["left", "right"],
+		}
+	}
 };
 
 # constant value
@@ -83,6 +95,8 @@ Add => { template => $binop },
 
 Mul => { template => $binop },
 
+Div => { template => $binop },
+
 And => { template => $binop },
 
 Or => { template => $binop },
@@ -95,9 +109,10 @@ Shl => { template => $binop },
 
 Shr => { template => $binop },
 
+# todo: change Minus to Neg
 Minus => { template => $unop },
 
-Not => { template => $unop },
+# Not => { template => $unop },
 
 Const => {
 	template => $constop,
@@ -126,26 +141,71 @@ Return => {
 
 # Load / Store
 
+# BPF_LD_IMM64 macro encodes single 'load 64-bit immediate' insn
+# pseudo BPF_LD_IMM64 insn used to refer to process-local map_fd
+# Memory load, dst_reg = *(uint *) (src_reg + off16)
 Load => {
 	op_flags  => [ "uses_memory" ],
-	irn_flags => [ "rematerializable" ],
 	state     => "exc_pinned",
-	in_reqs   => [ "mem", "gp" ],
+
+	constructors => {
+		imm => {
+			in_reqs => [ "mem", "gp", "gp"],
+			ins  => ["mem", "ptr"],
+			attr => "ir_mode *ls_mode, ir_entity *entity, int32_t offset, bool is_frame_entity",
+			init => "init_bpf_load_store_attributes(res, ls_mode, entity, offset, is_frame_entity, false)",
+		}
+	},
+
+	ins   => [ "mem", "ptr" ],
 	out_reqs  => [ "gp", "mem" ],
-	ins       => [ "mem", "ptr" ],
 	outs      => [ "res", "M" ],
+	attr_type => "bpf_load_store_attr_t",
 	emit      => '%D0 = load (%S1)',
 },
 
+# Memory store, *(uint *) (dst_reg + off16) = src_reg
+# Memory store, *(uint *) (dst_reg + off16) = imm32
 Store => {
 	op_flags  => [ "uses_memory" ],
-	irn_flags => [ "rematerializable" ],
 	state     => "exc_pinned",
-	in_reqs   => [ "mem", "gp", "gp" ],
+
+	constructors => {
+		imm => {
+			in_reqs => ["mem", "gp"],
+			ins => ["mem", "ptr"],
+			attr => "uint16_t offset, int32_t imm",
+			init => "init_bpf_load_store_attributes(res, offset, imm, true);",
+		},
+
+		reg => {
+			in_reqs => ["mem", "gp", "gp"],
+			ins => ["mem", "val", "ptr"],
+			attr => "uint16_t offset",
+			init => "init_bpf_load_store_attributes(res, offset, 0, false);",
+		},
+	},
+
 	out_reqs  => [ "mem" ],
-	ins       => [ "mem", "ptr", "val" ],
+	ins       => [ "mem", "val", "ptr" ],
 	outs      => [ "M" ],
-	emit      => '(%S1) = store %S2',
+	attr_type => "bpf_load_store_attr_t",
+},
+
+# BPF_EMIT_CALL
+Call => {
+	irn_flags => ["has_delay_slot"],
+	state => "modify_flags",
+	in_reqs => "...",
+	out_reqs  => "...",
+	outs      => [ "M", "first_result" ],
+	# fixed     => "if (aggregate_return) arch_add_irn_flags(res, (arch_irn_flags_t)sparc_arch_irn_flag_aggregate_return);",
+	constructors => {
+		imm => {
+			attr => "ir_entity *entity, int32_t func_id",
+			init => "\tbpf_set_attr_imm(res, entity, func_id);",
+		},
+	},
 },
 
 );

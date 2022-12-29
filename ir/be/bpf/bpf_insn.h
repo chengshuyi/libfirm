@@ -13,7 +13,9 @@ struct bpf_insn {
 };
 
 /* ALU ops on registers, bpf_add|sub|...: dst_reg += src_reg */
-
+// OP包括: BPF_ADD, BPF_SUB, BPF_MOV, BPF_ARSH, BPF_LSH, BPF_RSH, BPF_ADD, BPF_DIV,
+// 			BPF_MOD, BPF_OR, BPF_XOR, BPF_NEG
+// todo: add BPF_NOT
 #define BPF_ALU64_REG(OP, DST, SRC)				\
 	((struct bpf_insn) {					\
 		.code  = BPF_ALU64 | BPF_OP(OP) | BPF_X,	\
