@@ -50,6 +50,8 @@ $mode_gp = "mode_Iu"; # mode used by general purpose registers
 # 定义一些私有的attr类型
 %init_attr = (
 	bpf_attr_t => "",
+	bpf_load_attr_t => "",
+	bpf_store_attr_t => "",
 	bpf_load_store_attr_t => ""
 );
 
@@ -84,7 +86,6 @@ my $unop = {
 	irn_flags => [ "rematerializable" ],
 	in_reqs   => [ "gp" ],
 	out_reqs  => [ "gp" ],
-	emit      => '%D0 = {name} %S0',
 };
 
 %nodes = (
@@ -118,7 +119,6 @@ Const => {
 	template => $constop,
 	attr     => "ir_entity *entity, ir_tarval *value",
 	init     => "set_bpf_value(res, entity, value);",
-	emit     => '%D0 = const %I',
 },
 
 # Control Flow
@@ -135,7 +135,7 @@ Return => {
 	op_flags => [ "cfopcode" ],
 	in_reqs  => "...",
 	out_reqs => [ "exec" ],
-	ins      => [ "mem", "stack", "first_result" ],
+	ins      => [ "mem", "first_result" ],
 	outs     => [ "X" ],
 },
 
@@ -149,19 +149,24 @@ Load => {
 	state     => "exc_pinned",
 
 	constructors => {
-		imm => {
-			in_reqs => [ "mem", "gp", "gp"],
-			ins  => ["mem", "ptr"],
-			attr => "ir_mode *ls_mode, ir_entity *entity, int32_t offset, bool is_frame_entity",
-			init => "init_bpf_load_store_attributes(res, ls_mode, entity, offset, is_frame_entity, false)",
-		}
+		# imm => {
+		# 	in_reqs => [ "mem", "gp"],
+		# 	ins  => ["mem", "ptr"],
+		# 	attr => "int64_t offset",
+		# 	init => "init_bpf_load_store_attributes(res, ls_mode, entity, offset, is_frame_entity, false);",
+		# },
+		reg => {
+			in_reqs => ["mem", "gp"],
+			ins => ["mem", "ptr"],
+			attr => "ir_entity *entity, int16_t offset",
+			init => "init_bpf_load_attr(res, entity, offset);",
+		},
 	},
 
-	ins   => [ "mem", "ptr" ],
+	# ins   => [ "mem", "ptr" ],
 	out_reqs  => [ "gp", "mem" ],
 	outs      => [ "res", "M" ],
-	attr_type => "bpf_load_store_attr_t",
-	emit      => '%D0 = load (%S1)',
+	attr_type => "bpf_load_attr_t",
 },
 
 # Memory store, *(uint *) (dst_reg + off16) = src_reg
@@ -171,31 +176,29 @@ Store => {
 	state     => "exc_pinned",
 
 	constructors => {
-		imm => {
-			in_reqs => ["mem", "gp"],
-			ins => ["mem", "ptr"],
-			attr => "uint16_t offset, int32_t imm",
-			init => "init_bpf_load_store_attributes(res, offset, imm, true);",
-		},
+		# imm => {
+		# 	in_reqs => ["mem", "gp"],
+		# 	ins => ["mem", "ptr"],
+		# 	attr => "int16_t offset, int32_t imm",
+		# 	init => "init_bpf_store_attr(res, offset, imm, true);",
+		# },
 
 		reg => {
 			in_reqs => ["mem", "gp", "gp"],
 			ins => ["mem", "val", "ptr"],
-			attr => "uint16_t offset",
-			init => "init_bpf_load_store_attributes(res, offset, 0, false);",
+			attr => "ir_entity *entity, uint16_t offset",
+			init => "init_bpf_store_attr(res, entity, offset);",
 		},
 	},
 
 	out_reqs  => [ "mem" ],
-	ins       => [ "mem", "val", "ptr" ],
 	outs      => [ "M" ],
-	attr_type => "bpf_load_store_attr_t",
+	attr_type => "bpf_store_attr_t",
 },
 
 # BPF_EMIT_CALL
 Call => {
 	irn_flags => ["has_delay_slot"],
-	state => "modify_flags",
 	in_reqs => "...",
 	out_reqs  => "...",
 	outs      => [ "M", "first_result" ],
@@ -203,7 +206,7 @@ Call => {
 	constructors => {
 		imm => {
 			attr => "ir_entity *entity, int32_t func_id",
-			init => "\tbpf_set_attr_imm(res, entity, func_id);",
+			init => "\tbpf_set_imm_attr(res, func_id);",
 		},
 	},
 },

@@ -56,9 +56,12 @@ static void bpf_emit_dest_register(const ir_node *node, int pos)
 
 void bpf_emitf(const ir_node *node, const char *format, ...)
 {
-	BE_EMITF(node, format, ap, false) {
-		switch (*format++) {
-		case 'S': {
+	BE_EMITF(node, format, ap, false)
+	{
+		switch (*format++)
+		{
+		case 'S':
+		{
 			if (!is_digit(*format))
 				goto unknown;
 			unsigned const pos = *format++ - '0';
@@ -66,7 +69,8 @@ void bpf_emitf(const ir_node *node, const char *format, ...)
 			break;
 		}
 
-		case 'D': {
+		case 'D':
+		{
 			if (!is_digit(*format))
 				goto unknown;
 			unsigned const pos = *format++ - '0';
@@ -78,14 +82,15 @@ void bpf_emitf(const ir_node *node, const char *format, ...)
 			bpf_emit_immediate(node);
 			break;
 
-		case 'X': {
+		case 'X':
+		{
 			int num = va_arg(ap, int);
 			be_emit_irprintf("%X", num);
 			break;
 		}
 
 		default:
-unknown:
+		unknown:
 			panic("unknown format conversion");
 		}
 	}
@@ -107,7 +112,8 @@ static void emit_be_IncSP(const ir_node *node)
 
 	/* downwards growing stack */
 	const char *op = "add";
-	if (offset < 0) {
+	if (offset < 0)
+	{
 		op = "sub";
 		offset = -offset;
 	}
@@ -117,24 +123,149 @@ static void emit_be_IncSP(const ir_node *node)
 
 static void emit_Return(const ir_node *node)
 {
-	ir_graph *irg        = get_irn_irg(node);
-	ir_type  *frame_type = get_irg_frame_type(irg);
-	unsigned  size       = get_type_size(frame_type);
+	ir_graph *irg = get_irn_irg(node);
+	ir_type *frame_type = get_irg_frame_type(irg);
+	unsigned size = get_type_size(frame_type);
 
 	/* emit function epilog here */
 
 	/* deallocate stackframe */
-	if (size > 0) {
+	if (size > 0)
+	{
 		bpf_emitf(node, "add %%sp, %u, %%sp", size);
 	}
 
 	/* return */
-	unsigned    const n_res = get_irn_arity(node) - n_bpf_Return_first_result;
-	char const *const fmt   =
-		n_res == 0 ? "ret" :
-		n_res == 1 ? "ret %S2" :
-		"ret %S2, ...";
+	unsigned const n_res = get_irn_arity(node) - n_bpf_Return_first_result;
+	char const *const fmt =
+		n_res == 0 ? "ret" : n_res == 1 ? "ret %S2"
+										: "ret %S2, ...";
 	bpf_emitf(node, fmt);
+}
+
+static void emit_bpf_add(const ir_node *node)
+{
+	const arch_register_t *left_reg = arch_get_irn_register_in(node, 0);
+	const arch_register_t *right_reg = arch_get_irn_register_in(node, 1);
+	const arch_register_t *dest_reg = arch_get_irn_register_out(node, 0);
+
+	printf("r%d = r%d\n", dest_reg->index, left_reg->index);
+	printf("r%d += r%d\n", dest_reg->index, right_reg->index);
+}
+
+static void emit_bpf_and(const ir_node *node)
+{
+	const arch_register_t *left_reg = arch_get_irn_register_in(node, 0);
+	const arch_register_t *right_reg = arch_get_irn_register_in(node, 1);
+	const arch_register_t *dest_reg = arch_get_irn_register_out(node, 0);
+
+	printf("r%d = r%d\n", dest_reg->index, left_reg->index);
+	printf("r%d &= r%d\n", dest_reg->index, right_reg->index);
+}
+
+static void emit_bpf_const(const ir_node *node)
+{
+	const arch_register_t *dest_reg = arch_get_irn_register_out(node, 0);
+	printf("r%d = 0\n", dest_reg->index);
+}
+
+static void emit_bpf_call(const ir_node *node)
+{
+	printf("call todo\n");
+}
+
+static void emit_bpf_div(const ir_node *node)
+{
+	const arch_register_t *left_reg = arch_get_irn_register_in(node, 0);
+	const arch_register_t *right_reg = arch_get_irn_register_in(node, 1);
+	const arch_register_t *dest_reg = arch_get_irn_register_out(node, 0);
+
+	printf("r%d = r%d\n", dest_reg->index, left_reg->index);
+	printf("r%d /= r%d\n", dest_reg->index, right_reg->index);
+}
+
+static void emit_bpf_xor(const ir_node *node)
+{
+	const arch_register_t *left_reg = arch_get_irn_register_in(node, 0);
+	const arch_register_t *right_reg = arch_get_irn_register_in(node, 1);
+	const arch_register_t *dest_reg = arch_get_irn_register_out(node, 0);
+
+	printf("r%d = r%d\n", dest_reg->index, left_reg->index);
+	printf("r%d ^= r%d\n", dest_reg->index, right_reg->index);
+}
+
+// dst_reg = *(size *) (src_reg + off)
+static void emit_bpf_load(const ir_node *node)
+{
+	const arch_register_t *ptr_reg = arch_get_irn_register_in(node, 1);
+	const arch_register_t *dest_reg = arch_get_irn_register_out(node, 0);
+	const bpf_load_attr_t *attr = get_bpf_load_attr_const(node);
+	printf("r%d = *(u64 *)(r%d + %d)\n", dest_reg->index, ptr_reg->index + attr->offset);
+}
+
+static void emit_bpf_minus(const ir_node *node)
+{
+	printf("minus todo\n");
+}
+
+static void emit_bpf_mul(const ir_node *node)
+{
+	const arch_register_t *left_reg = arch_get_irn_register_in(node, 0);
+	const arch_register_t *right_reg = arch_get_irn_register_in(node, 1);
+	const arch_register_t *dest_reg = arch_get_irn_register_out(node, 0);
+
+	printf("r%d = r%d\n", dest_reg->index, left_reg->index);
+	printf("r%d *= r%d\n", dest_reg->index, right_reg->index);
+}
+
+static void emit_bpf_or(const ir_node *node)
+{
+	const arch_register_t *left_reg = arch_get_irn_register_in(node, 0);
+	const arch_register_t *right_reg = arch_get_irn_register_in(node, 1);
+	const arch_register_t *dest_reg = arch_get_irn_register_out(node, 0);
+
+	printf("r%d = r%d\n", dest_reg->index, left_reg->index);
+	printf("r%d |= r%d\n", dest_reg->index, right_reg->index);
+}
+
+static void emit_bpf_shl(const ir_node *node)
+{
+	const arch_register_t *left_reg = arch_get_irn_register_in(node, 0);
+	const arch_register_t *right_reg = arch_get_irn_register_in(node, 1);
+	const arch_register_t *dest_reg = arch_get_irn_register_out(node, 0);
+
+	printf("r%d = r%d\n", dest_reg->index, left_reg->index);
+	printf("r%d >>= r%d\n", dest_reg->index, right_reg->index);
+}
+
+static void emit_bpf_shr(const ir_node *node)
+{
+	const arch_register_t *left_reg = arch_get_irn_register_in(node, 0);
+	const arch_register_t *right_reg = arch_get_irn_register_in(node, 1);
+	const arch_register_t *dest_reg = arch_get_irn_register_out(node, 0);
+
+	printf("r%d = r%d\n", dest_reg->index, left_reg->index);
+	printf("r%d <<= r%d\n", dest_reg->index, right_reg->index);
+}
+
+
+// *(size *) (dst_reg + off) = src_reg
+static void emit_bpf_store(const ir_node *node)
+{
+	const arch_register_t *val_reg = arch_get_irn_register_in(node, 1);
+	const arch_register_t *ptr_reg = arch_get_irn_register_in(node, 2);
+	const bpf_store_attr_t *attr = get_bpf_store_attr_const(node);
+	printf("*(u64 *)(r%d + %d) = r%d\n", ptr_reg->index, val_reg->index);
+}
+
+static void emit_bpf_sub(const ir_node *node)
+{
+	const arch_register_t *left_reg = arch_get_irn_register_in(node, 0);
+	const arch_register_t *right_reg = arch_get_irn_register_in(node, 1);
+	const arch_register_t *dest_reg = arch_get_irn_register_out(node, 0);
+
+	printf("r%d = r%d\n", dest_reg->index, left_reg->index);
+	printf("r%d -= r%d\n", dest_reg->index, right_reg->index);
 }
 
 /**
@@ -148,10 +279,23 @@ static void bpf_register_emitters(void)
 	/* register all emitter functions defined in spec */
 	bpf_register_spec_emitters();
 
-	/* custom emitters not provided by the spec */
-	be_set_emitter(op_bpf_Jmp,    emit_bpf_Jmp);
+	be_set_emitter(op_bpf_Add, emit_bpf_add);
+	be_set_emitter(op_bpf_And, emit_bpf_and);
+	be_set_emitter(op_bpf_Const, emit_bpf_const);
+	be_set_emitter(op_bpf_Call, emit_bpf_call);
+	be_set_emitter(op_bpf_Div, emit_bpf_div);
+	be_set_emitter(op_bpf_Xor, emit_bpf_xor);
+	be_set_emitter(op_bpf_Jmp, emit_bpf_Jmp);
+	be_set_emitter(op_bpf_Load, emit_bpf_load);
+	be_set_emitter(op_bpf_Minus, emit_bpf_minus);
+	be_set_emitter(op_bpf_Mul, emit_bpf_mul);
+	be_set_emitter(op_bpf_Or, emit_bpf_or);
 	be_set_emitter(op_bpf_Return, emit_Return);
-	be_set_emitter(op_be_IncSP,        emit_be_IncSP);
+	be_set_emitter(op_bpf_Shl, emit_bpf_shl);
+	be_set_emitter(op_bpf_Shr, emit_bpf_shr);
+	be_set_emitter(op_bpf_Store, emit_bpf_store);
+	be_set_emitter(op_bpf_Sub, emit_bpf_sub);
+	/* custom emitters not provided by the spec */
 }
 
 /**
@@ -162,7 +306,8 @@ static void bpf_emit_block(ir_node *block)
 {
 	be_gas_begin_block(block);
 
-	sched_foreach(block, node) {
+	sched_foreach(block, node)
+	{
 		be_emit_node(node);
 	}
 }
@@ -184,7 +329,8 @@ void bpf_emit_function(ir_graph *irg)
 
 	be_emit_init_cf_links(block_schedule);
 
-	for (size_t i = 0, n = ARR_LEN(block_schedule); i < n; ++i) {
+	for (size_t i = 0, n = ARR_LEN(block_schedule); i < n; ++i)
+	{
 		ir_node *block = block_schedule[i];
 		bpf_emit_block(block);
 	}

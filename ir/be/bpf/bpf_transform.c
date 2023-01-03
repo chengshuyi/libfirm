@@ -145,10 +145,7 @@ static ir_node *gen_Minus(ir_node *node)
 {
 	ir_mode *mode = get_irn_mode(node);
 
-	if (mode_is_float(mode))
-	{
-		panic("eBPF doesn't support float point");
-	}
+	panic("eBPF doesn't support minus");
 	// return transform_binop(node, new_bd_bpf_Minus_reg);
 	return NULL;
 }
@@ -186,7 +183,7 @@ static ir_node *gen_Call(ir_node *node)
 	size_t n_ress = get_method_n_ress(type);
 	int in_arity = 0;
 
-	calling_convention_t *cconv = bpf_decide_calling_convention(type, NULL);
+	calling_convention_t *cconv = bpf_decide_calling_convention(NULL, type);
 	size_t n_param_regs = cconv->n_param_regs;
 
 	ir_node **in = ALLOCAN(ir_node *, 5);
@@ -213,16 +210,15 @@ static ir_node *gen_Call(ir_node *node)
 	unsigned out_arity = pn_bpf_Call_first_result + ARRAY_SIZE(caller_saves);
 	// create call node;
 	ir_node *res;
-	assert(is_Const(callee));
-	int32_t func_id = get_Const_long(callee);
-	res = new_bd_bpf_Call_imm(dbgi, new_block, in_arity, in, in_req, out_arity, NULL, func_id);
+	res = new_bd_bpf_Call_imm(dbgi, new_block, in_arity, in, in_req, out_arity, NULL, 1);
+	arch_set_irn_register_req_out(res, pn_bpf_Call_M, arch_memory_req);
 
-	for (size_t o = 0; o < 6; ++o)
+	for (size_t o = 0; o < ARRAY_SIZE(caller_saves); ++o)
 	{
 		const arch_register_t *reg = caller_saves[o];
 		arch_set_irn_register_req_out(res, pn_bpf_Call_first_result + o, reg->single_req);
 	}
-	set_irn_pinned(res, get_irn_pinned(node));
+	// set_irn_pinned(res, get_irn_pinned(node));
 
 	bpf_free_calling_convention(cconv);
 	return res;
@@ -267,12 +263,8 @@ static ir_node *gen_Load(ir_node *node)
 	ir_node *mem = get_Load_mem(node);
 	ir_node *new_mem = be_transform_node(mem);
 	ir_mode *mode = get_Load_mode(node);
-
-	if (mode_is_float(mode))
-	{
-		return new_bd_bpf_fLoad(dbgi, new_block, new_mem, new_ptr);
-	}
-	return new_bd_bpf_Load(dbgi, new_block, new_mem, new_ptr);
+	
+	return new_bd_bpf_Load_reg(dbgi, new_block, new_mem, new_ptr, NULL, 0);
 }
 
 static ir_node *gen_Store(ir_node *node)
@@ -288,12 +280,12 @@ static ir_node *gen_Store(ir_node *node)
 	match_address(ptr, &address);
 	
 	val = be_skip_downconv(val, false);
-	if (is_Const(val)) {
-		int32_t imm = get_Const_long(val);
-		return new_bd_bpf_Store_imm(dbgi, new_block, new_mem, address.ptr, address.offset, imm);
-	}
+	// if (is_Const(val)) {
+	// 	int32_t imm = get_Const_long(val);
+	// 	return new_bd_bpf_Store_imm(dbgi, new_block, new_mem, address.ptr, address.offset, imm);
+	// }
 	val = be_transform_node(val);
-	return new_bd_bpf_Store_reg(dbgi, new_block, new_mem, val, address.ptr, address.offset);
+	return new_bd_bpf_Store_reg(dbgi, new_block, new_mem, val, address.ptr, NULL, address.offset);
 }
 
 static ir_node *gen_Jmp(ir_node *node)
@@ -327,8 +319,29 @@ static ir_node *gen_Start(ir_node *node)
 
 static ir_node *gen_Return(ir_node *node)
 {
-	(void)node;
-	panic("eBPF doesn't support return op");
+	int                               p     = n_bpf_Return_first_result;
+	unsigned                    const n_res = get_Return_n_ress(node);
+	unsigned                    const n_ins = p + n_res;
+	ir_node                   **const in    = ALLOCAN(ir_node*, n_ins);
+	ir_graph                   *const irg   = get_irn_irg(node);
+	arch_register_req_t const **const reqs  = be_allocate_in_reqs(irg, n_ins);
+
+	in[n_bpf_Return_mem]   = be_transform_node(get_Return_mem(node));
+	reqs[n_bpf_Return_mem] = arch_memory_req;
+
+	// in[n_bpf_Return_stack]   = get_irg_frame(irg);
+	// reqs[n_bpf_Return_stack] = &bpf_registers[REG_R10];
+
+	for (unsigned i = 0; i != n_res; ++p, ++i) {
+		ir_node *const res = get_Return_res(node, i);
+		in[p]   = be_transform_node(res);
+		reqs[p] = arch_get_irn_register_req(in[p])->cls->class_req;
+	}
+
+	dbg_info *const dbgi  = get_irn_dbg_info(node);
+	ir_node  *const block = be_transform_nodes_block(node);
+	ir_node  *const ret   = new_bd_bpf_Return(dbgi, block, n_ins, in, reqs);
+	return ret;
 }
 
 static ir_node *gen_Phi(ir_node *node)
@@ -402,16 +415,31 @@ static ir_node *gen_Proj_Start(ir_node *node)
 {
 	ir_graph *const irg = get_irn_irg(node);
 	unsigned const pn = get_Proj_num(node);
-	// switch ((pn_Start)pn)
-	// {
-	// case pn_Start_M:
-	// 	return be_get_Start_mem(irg);
-	// case pn_Start_T_args:
-	// 	return new_r_Bad(irg, mode_T);
-	// case pn_Start_P_frame_base:
-	// 	return be_get_Start_proj(irg, &bpf_registers[REG_SP]);
-	// }
-	panic("unexpected Start proj %u", pn);
+	switch ((pn_Start)pn)
+	{
+	case pn_Start_M:
+		return be_get_Start_mem(irg);
+	case pn_Start_T_args:
+		return new_r_Bad(irg, mode_T);
+	case pn_Start_P_frame_base:
+		return be_get_Start_proj(irg, &bpf_registers[REG_R10]);
+	}
+}
+
+static ir_node *gen_Proj_Call(ir_node *node)
+{
+	unsigned pn        = get_Proj_num(node);
+	ir_node *call      = get_Proj_pred(node);
+	ir_node *new_call  = be_transform_node(call);
+	switch ((pn_Call)pn) {
+	case pn_Call_M:
+		return be_new_Proj(new_call, pn_bpf_Call_M);
+	case pn_Call_X_regular:
+	case pn_Call_X_except:
+	case pn_Call_T_result:
+		break;
+	}
+	panic("unexpected Call proj %u", pn);
 }
 
 static void bpf_register_transformers(void)
@@ -442,11 +470,12 @@ static void bpf_register_transformers(void)
 	be_set_transform_proj_function(op_Proj, gen_Proj_Proj);
 	be_set_transform_proj_function(op_Start, gen_Proj_Start);
 	be_set_transform_proj_function(op_Store, gen_Proj_Store);
+	be_set_transform_proj_function(op_Call,        gen_Proj_Call);
 }
 
 static const unsigned ignore_regs[] = {
-	REG_R10, // fp
-	REG_R0,	 // return register
+	// REG_R10, // fp
+	// REG_R0,	 // return register
 };
 
 static void setup_calling_convention(ir_graph *irg)

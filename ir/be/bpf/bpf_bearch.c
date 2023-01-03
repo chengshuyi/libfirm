@@ -76,6 +76,7 @@ static const regalloc_if_t bpf_regalloc_if = {
 
 static void bpf_generate_code(FILE *output, const char *cup_name)
 {
+	printf("bpf generate code\n");
 	be_begin(output, cup_name);
 	unsigned *const sp_is_non_ssa = rbitset_alloca(N_BPF_REGISTERS);
 	rbitset_set(sp_is_non_ssa, REG_R10);

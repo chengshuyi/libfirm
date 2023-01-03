@@ -27,11 +27,31 @@ enum sparc_arch_irn_flags_t {
 };
 
 
+typedef struct bpf_imm_attr_t bpf_imm_attr_t;
 struct bpf_imm_attr_t
 {
 	int32_t imm32;
 };
 
+typedef struct bpf_const_attr_t bpf_const_attr_t;
+struct bpf_const_attr_t 
+{
+	int64_t imm64;
+};
+
+typedef struct bpf_load_attr_t bpf_load_attr_t;
+struct bpf_load_attr_t 
+{
+	ir_entity *entity;
+	int16_t offset;
+};
+
+typedef struct bpf_store_attr_t bpf_store_attr_t;
+struct bpf_store_attr_t 
+{
+	ir_entity *entity;
+	int16_t offset;
+};
 /**
  * base eBPF attribute
  */

@@ -55,8 +55,22 @@ void bpf_dump_node(FILE *F, const ir_node *n, dump_reason_t reason)
 void bpf_set_imm_attr(ir_node *res, int32_t imm)
 {
 	bpf_imm_attr_t *attr = (bpf_imm_attr_t *)get_irn_generic_attr(res);
-	attr->imm = imm;
+	attr->imm32 = imm;
 	arch_add_irn_flags(res, (arch_irn_flags_t)bpf_arch_irn_flag_immediate_form);
+}
+
+void init_bpf_load_attr(ir_node *res, ir_entity *entity, int16_t offset)
+{
+	bpf_load_attr_t *attr = (bpf_load_attr_t *)get_irn_generic_attr(res);
+	attr->entity = entity;
+	attr->offset = offset;
+}
+
+void init_bpf_store_attr(ir_node *res, ir_entity *entity, int16_t offset)
+{
+	bpf_store_attr_t *attr = (bpf_store_attr_t *)get_irn_generic_attr(res);
+	attr->entity = entity;
+	attr->offset = offset;
 }
 
 bpf_load_store_attr_t *get_bpf_load_store_attr(ir_node *node)
@@ -108,3 +122,27 @@ int bpf_attrs_equal(const ir_node *a, const ir_node *b)
 	return 0;
 }
 
+int bpf_load_attrs_equal(const ir_node *a, const ir_node *b)
+{
+	const bpf_load_attr_t *attr_a = (bpf_load_attr_t *)get_irn_generic_attr(a);
+	const bpf_load_attr_t *attr_b = (bpf_load_attr_t *)get_irn_generic_attr(b);
+	return attr_a->entity == attr_b->entity && attr_a->offset == attr_b->offset;
+}
+
+int bpf_store_attrs_equal(const ir_node *a, const ir_node *b)
+{
+	const bpf_store_attr_t *attr_a = (bpf_store_attr_t *)get_irn_generic_attr(a);
+	const bpf_store_attr_t *attr_b = (bpf_store_attr_t *)get_irn_generic_attr(b);
+	return attr_a->entity == attr_b->entity && attr_a->offset == attr_b->offset;
+}
+
+
+const bpf_store_attr_t *get_bpf_store_attr_const(const ir_node *node)
+{
+	return (const bpf_store_attr_t*) get_irn_generic_attr_const(node);
+}
+
+const bpf_store_attr_t *get_bpf_load_attr_const(const ir_node *node)
+{
+	return (const bpf_load_attr_t*) get_irn_generic_attr_const(node);
+}
