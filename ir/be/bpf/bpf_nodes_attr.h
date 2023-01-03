@@ -27,6 +27,13 @@ enum sparc_arch_irn_flags_t {
 };
 
 
+typedef struct bpf_member_attr_t bpf_member_attr_t;
+struct bpf_member_attr_t
+{
+	ir_entity *entity;
+	int32_t offset;
+};
+
 typedef struct bpf_imm_attr_t bpf_imm_attr_t;
 struct bpf_imm_attr_t
 {

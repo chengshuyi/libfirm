@@ -267,6 +267,21 @@ static ir_node *gen_Load(ir_node *node)
 	return new_bd_bpf_Load_reg(dbgi, new_block, new_mem, new_ptr, NULL, 0);
 }
 
+static ir_node *gen_Member(ir_node *node)
+{
+	dbg_info  *dbgi      = get_irn_dbg_info(node);
+	ir_node   *new_block = be_transform_nodes_block(node);
+	ir_node   *ptr       = get_Member_ptr(node);
+	ir_node   *new_ptr   = be_transform_node(ptr);
+	ir_entity *entity    = get_Member_entity(node);
+
+	/* must be the frame pointer all other sels must have been lowered
+	 * already */
+	assert(is_Proj(ptr) && is_Start(get_Proj_pred(ptr)));
+
+	return new_bd_bpf_FrameAddr(dbgi, new_block, new_ptr, entity, 0);
+}
+
 static ir_node *gen_Store(ir_node *node)
 {
 	ir_node *new_block = be_transform_nodes_block(node);
@@ -454,6 +469,7 @@ static void bpf_register_transformers(void)
 	be_set_transform_function(op_Eor, gen_Eor); // XoR
 	be_set_transform_function(op_Jmp, gen_Jmp);
 	be_set_transform_function(op_Load, gen_Load);
+	be_set_transform_function(op_Member, gen_Member);
 	be_set_transform_function(op_Minus, gen_Minus);
 	be_set_transform_function(op_Mul, gen_Mul);
 	be_set_transform_function(op_Not, gen_Not);

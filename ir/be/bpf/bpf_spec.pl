@@ -50,6 +50,7 @@ $mode_gp = "mode_Iu"; # mode used by general purpose registers
 # 定义一些私有的attr类型
 %init_attr = (
 	bpf_attr_t => "",
+	bpf_member_attr_t => "",
 	bpf_load_attr_t => "",
 	bpf_store_attr_t => "",
 	bpf_load_store_attr_t => ""
@@ -137,6 +138,18 @@ Return => {
 	out_reqs => [ "exec" ],
 	ins      => [ "mem", "first_result" ],
 	outs     => [ "X" ],
+},
+
+
+FrameAddr => {
+	op_flags  => [ "constlike" ],
+	irn_flags => [ "rematerializable" ],
+	attr      => "ir_entity *entity, int32_t offset",
+	in_reqs   => [ "gp" ],
+	out_reqs  => [ "gp" ],
+	ins       => [ "base" ],
+	init      => "init_bpf_member_attr(res, entity, offset);",
+	attr_type => "bpf_member_attr_t",
 },
 
 # Load / Store
