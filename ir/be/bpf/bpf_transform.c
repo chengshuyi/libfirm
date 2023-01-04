@@ -161,6 +161,14 @@ static ir_node *gen_Const(ir_node *node)
 	return transform_const(node, NULL, value);
 }
 
+// static ir_node *gen_Address(ir_node *node)
+// {
+// 	ir_entity *entity    = get_Address_entity(node);
+// 	dbg_info  *dbgi      = get_irn_dbg_info(node);
+// 	ir_node   *new_block = be_transform_nodes_block(node);
+// 	return make_address(dbgi, new_block, entity, 0);
+// }
+
 static ir_node *gen_Conv(ir_node *node)
 {
 	ir_node *op = get_Conv_op(node);
@@ -495,6 +503,7 @@ static void bpf_register_transformers(void)
 
 	be_set_transform_function(op_Add, gen_Add);
 	be_set_transform_function(op_And, gen_And);
+	// be_set_transform_function(op_Address, gen_Address);
 	be_set_transform_function(op_Const, gen_Const);
 	be_set_transform_function(op_Conv, gen_Conv);
 	be_set_transform_function(op_Call, gen_Call);

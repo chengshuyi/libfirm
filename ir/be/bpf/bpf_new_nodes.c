@@ -59,6 +59,12 @@ void bpf_set_imm_attr(ir_node *res, int32_t imm)
 	arch_add_irn_flags(res, (arch_irn_flags_t)bpf_arch_irn_flag_immediate_form);
 }
 
+void init_bpf_mapfd_attr(ir_node *res, int32_t fd)
+{
+	bpf_mapfd_attr_t *attr = (bpf_mapfd_attr_t *)get_irn_generic_attr(res);
+	attr->fd = fd;
+}
+
 void init_bpf_member_attr(ir_node *res, ir_entity *entity, int32_t offset)
 {
 	bpf_member_attr_t *attr = (bpf_member_attr_t *)get_irn_generic_attr(res);
@@ -127,6 +133,13 @@ int bpf_attrs_equal(const ir_node *a, const ir_node *b)
 	// return attr_a->value == attr_b->value
 	//     && attr_a->entity == attr_b->entity;
 	return 0;
+}
+
+int bpf_mapfd_attrs_equal(const ir_node *a, const ir_node *b)
+{
+	const bpf_mapfd_attr_t *attr_a = (bpf_mapfd_attr_t *)get_irn_generic_attr(a);
+	const bpf_mapfd_attr_t *attr_b = (bpf_mapfd_attr_t *)get_irn_generic_attr(b);
+	return attr_a->fd == attr_b->fd;
 }
 
 int bpf_member_attrs_equal(const ir_node *a, const ir_node *b)

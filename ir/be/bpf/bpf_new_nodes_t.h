@@ -23,10 +23,12 @@ int bpf_attrs_equal(const ir_node *a, const ir_node *b);
 void bpf_set_imm_attr(ir_node *res, int32_t imm);
 void init_bpf_load_store_attributes(ir_node *res, uint16_t offset, int32_t imm, bool is_imm);
 
+void init_bpf_mapfd_attr(ir_node *res, int32_t offset);
 void init_bpf_member_attr(ir_node *res, ir_entity *entity, int32_t offset);
 void init_bpf_load_attr(ir_node *res, ir_entity *entity, int16_t offset);
 void init_bpf_store_attr(ir_node *res, ir_entity *entity, int16_t offset);
 
+int bpf_mapfd_attrs_equal(const ir_node *a, const ir_node *b);
 int bpf_member_attrs_equal(const ir_node *a, const ir_node *b);
 int bpf_load_attrs_equal(const ir_node *a, const ir_node *b);
 int bpf_store_attrs_equal(const ir_node *a, const ir_node *b);
