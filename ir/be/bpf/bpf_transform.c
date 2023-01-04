@@ -161,6 +161,38 @@ static ir_node *gen_Const(ir_node *node)
 	return transform_const(node, NULL, value);
 }
 
+static ir_node *gen_Conv(ir_node *node)
+{
+	ir_node *op = get_Conv_op(node);
+	ir_mode *src_mode = get_irn_mode(op);
+	ir_mode *dst_mode = get_irn_mode(node);
+
+	if (src_mode == dst_mode)
+		return be_transform_node(op);
+
+	ir_node  *block    = be_transform_nodes_block(node);
+	int       src_bits = get_mode_size_bits(src_mode);
+	int       dst_bits = get_mode_size_bits(dst_mode);
+	dbg_info *dbgi     = get_irn_dbg_info(node);
+
+	if (src_bits >= dst_bits) {
+		/* kill unnecessary conv */
+		return be_transform_node(op);
+	}
+
+	if (be_upper_bits_clean(op, src_mode)) {
+		return be_transform_node(op);
+	}
+	ir_node *new_op = be_transform_node(op);
+
+	// if (mode_is_signed(src_mode)) {
+	// 	return gen_sign_extension(dbgi, block, new_op, src_bits);
+	// } else {
+	// 	return gen_zero_extension(dbgi, block, new_op, src_bits);
+	// }
+	return new_op;
+}
+
 static const arch_register_t *const caller_saves[] = {
 	&bpf_registers[REG_R0],
 	&bpf_registers[REG_R1],
@@ -464,6 +496,7 @@ static void bpf_register_transformers(void)
 	be_set_transform_function(op_Add, gen_Add);
 	be_set_transform_function(op_And, gen_And);
 	be_set_transform_function(op_Const, gen_Const);
+	be_set_transform_function(op_Conv, gen_Conv);
 	be_set_transform_function(op_Call, gen_Call);
 	be_set_transform_function(op_Div, gen_Div);
 	be_set_transform_function(op_Eor, gen_Eor); // XoR
