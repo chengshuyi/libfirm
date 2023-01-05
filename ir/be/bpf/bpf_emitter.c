@@ -17,6 +17,7 @@
 #include "begnuas.h"
 #include "benode.h"
 #include "besched.h"
+#include "gen_bpf_regalloc_if.h"
 #include "gen_bpf_emitter.h"
 #include "irgwalk.h"
 #include "panic.h"
@@ -163,6 +164,34 @@ static void emit_bpf_and(const ir_node *node)
 	printf("r%d &= r%d\n", dest_reg->index, right_reg->index);
 }
 
+static void emit_be_Copy(const ir_node *irn)
+{
+	arch_register_t const *const in = arch_get_irn_register_in(irn, 0);
+	arch_register_t const *const out = arch_get_irn_register_out(irn, 0);
+	if (in == out) {
+		/* omitted Copy */
+		return;
+	}
+
+	arch_register_class_t const *const cls = out->cls;
+	if (cls != &bpf_reg_classes[CLASS_bpf_gp]) 
+		panic("Wrong register class\n");
+	
+	printf("r%d = r%d\n", out->index,in->index);
+}
+
+
+static void emit_bpf_FrameAddr(const ir_node *node)
+{
+	const bpf_member_attr_t *attr   = get_bpf_member_attr_const(node);
+	int32_t             offset = attr->offset;
+	arch_register_t const *const in = arch_get_irn_register_in(node, 0);
+	arch_register_t const *const out = arch_get_irn_register_out(node, 0);
+
+	printf("r%d = r%d + %d\n", out->index, in->index, offset);
+}
+
+
 static void emit_bpf_const(const ir_node *node)
 {
 	const arch_register_t *dest_reg = arch_get_irn_register_out(node, 0);
@@ -281,6 +310,9 @@ static void bpf_register_emitters(void)
 
 	be_set_emitter(op_bpf_Add, emit_bpf_add);
 	be_set_emitter(op_bpf_And, emit_bpf_and);
+	be_set_emitter(op_be_Copy,         emit_be_Copy);
+	be_set_emitter(op_be_CopyKeep,     emit_be_Copy);
+	be_set_emitter(op_bpf_FrameAddr, emit_bpf_FrameAddr);
 	be_set_emitter(op_bpf_Const, emit_bpf_const);
 	be_set_emitter(op_bpf_Call, emit_bpf_call);
 	be_set_emitter(op_bpf_Div, emit_bpf_div);

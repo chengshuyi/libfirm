@@ -22,6 +22,7 @@ const bpf_attr_t *get_bpf_attr_const(const ir_node *node);
 
 const bpf_store_attr_t *get_bpf_store_attr_const(const ir_node *node);
 const bpf_store_attr_t *get_bpf_load_attr_const(const ir_node *node);
+const bpf_member_attr_t *get_bpf_member_attr_const(const ir_node *node);
 
 /* Include the generated headers */
 #include "gen_bpf_new_nodes.h"

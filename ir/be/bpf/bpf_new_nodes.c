@@ -173,3 +173,8 @@ const bpf_store_attr_t *get_bpf_load_attr_const(const ir_node *node)
 {
 	return (const bpf_load_attr_t*) get_irn_generic_attr_const(node);
 }
+
+const bpf_member_attr_t *get_bpf_member_attr_const(const ir_node *node)
+{
+	return (const bpf_member_attr_t*) get_irn_generic_attr_const(node);
+}
