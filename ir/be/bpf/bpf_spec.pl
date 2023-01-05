@@ -50,6 +50,7 @@ $mode_gp = "mode_Iu"; # mode used by general purpose registers
 # 定义一些私有的attr类型
 %init_attr = (
 	bpf_attr_t => "",
+	bpf_call_attr_t => "",
 	bpf_mapfd_attr_t => "",
 	bpf_member_attr_t => "",
 	bpf_load_attr_t => "",
@@ -229,6 +230,10 @@ Call => {
 		imm => {
 			attr => "ir_entity *entity, int32_t func_id",
 			init => "\tbpf_set_imm_attr(res, func_id);",
+		},
+		helper => {
+			attr => "ir_entity *entity, int32_t func_id",
+			init => "init_bpf_call_attr(res, entity, func_id);",
 		},
 	},
 },

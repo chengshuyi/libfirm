@@ -250,7 +250,24 @@ static ir_node *gen_Call(ir_node *node)
 	unsigned out_arity = pn_bpf_Call_first_result + ARRAY_SIZE(caller_saves);
 	// create call node;
 	ir_node *res;
-	res = new_bd_bpf_Call_imm(dbgi, new_block, in_arity, in, in_req, out_arity, NULL, 1);
+	ir_entity *entity = NULL;
+	int32_t func_id = 0;
+	int32_t i = 0;
+	if (is_Address(callee)) {
+		entity = get_Address_entity(callee);
+
+		ident *id =  get_entity_ident(entity);
+		for (i =0; ; i++) {
+			if (id[i] == ':')
+				break;
+		}
+
+		i++;
+
+		func_id = atoi(&id[i]);
+	}
+	
+	res = new_bd_bpf_Call_helper(dbgi, new_block, in_arity, in, in_req, out_arity, entity, func_id);
 	arch_set_irn_register_req_out(res, pn_bpf_Call_M, arch_memory_req);
 
 	for (size_t o = 0; o < ARRAY_SIZE(caller_saves); ++o)

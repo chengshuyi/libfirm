@@ -20,6 +20,7 @@ bpf_attr_t *get_bpf_attr(ir_node *node);
 const bpf_attr_t *get_bpf_attr_const(const ir_node *node);
 
 
+const bpf_call_attr_t *get_bpf_call_attr_const(const ir_node *node);
 const bpf_store_attr_t *get_bpf_store_attr_const(const ir_node *node);
 const bpf_store_attr_t *get_bpf_load_attr_const(const ir_node *node);
 const bpf_member_attr_t *get_bpf_member_attr_const(const ir_node *node);

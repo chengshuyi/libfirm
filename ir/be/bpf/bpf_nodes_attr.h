@@ -26,6 +26,14 @@ enum sparc_arch_irn_flags_t {
 	bpf_arch_irn_flag_has_delay_slot        = arch_irn_flag_backend << 3,
 };
 
+
+typedef struct bpf_call_attr_t bpf_call_attr_t;
+struct bpf_call_attr_t
+{
+	ir_entity *entity;
+	int32_t func_id;
+};
+
 typedef struct bpf_mapfd_attr_t bpf_mapfd_attr_t;
 struct bpf_mapfd_attr_t
 {

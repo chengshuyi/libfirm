@@ -59,6 +59,13 @@ void bpf_set_imm_attr(ir_node *res, int32_t imm)
 	arch_add_irn_flags(res, (arch_irn_flags_t)bpf_arch_irn_flag_immediate_form);
 }
 
+void init_bpf_call_attr(ir_node *res, ir_entity *entity, int32_t func_id)
+{
+	bpf_call_attr_t *attr = (bpf_call_attr_t *)get_irn_generic_attr(res);
+	attr->entity = entity;
+	attr->func_id = func_id;
+}
+
 void init_bpf_mapfd_attr(ir_node *res, int32_t fd)
 {
 	bpf_mapfd_attr_t *attr = (bpf_mapfd_attr_t *)get_irn_generic_attr(res);
@@ -135,6 +142,13 @@ int bpf_attrs_equal(const ir_node *a, const ir_node *b)
 	return 0;
 }
 
+int bpf_call_attrs_equal(const ir_node *a, const ir_node *b)
+{
+	const bpf_call_attr_t *attr_a = (bpf_call_attr_t *)get_irn_generic_attr(a);
+	const bpf_call_attr_t *attr_b = (bpf_call_attr_t *)get_irn_generic_attr(b);
+	return attr_a->func_id == attr_b->func_id && attr_a->entity == attr_b->entity;
+}
+
 int bpf_mapfd_attrs_equal(const ir_node *a, const ir_node *b)
 {
 	const bpf_mapfd_attr_t *attr_a = (bpf_mapfd_attr_t *)get_irn_generic_attr(a);
@@ -163,6 +177,11 @@ int bpf_store_attrs_equal(const ir_node *a, const ir_node *b)
 	return attr_a->entity == attr_b->entity && attr_a->offset == attr_b->offset;
 }
 
+
+const bpf_call_attr_t *get_bpf_call_attr_const(const ir_node *node)
+{
+	return (const bpf_call_attr_t*) get_irn_generic_attr_const(node);
+}
 
 const bpf_store_attr_t *get_bpf_store_attr_const(const ir_node *node)
 {

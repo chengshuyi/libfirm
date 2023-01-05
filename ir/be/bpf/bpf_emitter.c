@@ -200,7 +200,11 @@ static void emit_bpf_const(const ir_node *node)
 
 static void emit_bpf_call(const ir_node *node)
 {
-	printf("call todo\n");
+	bpf_call_attr_t *attr = get_bpf_call_attr_const(node);
+
+	ident *id = get_entity_ident(attr->entity);
+
+	printf("call %s\n", id);
 }
 
 static void emit_bpf_div(const ir_node *node)
