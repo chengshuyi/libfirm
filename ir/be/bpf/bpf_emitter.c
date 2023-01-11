@@ -135,8 +135,15 @@ static void emit_bpf_const(const ir_node *node)
 {
 	const arch_register_t *dest_reg = arch_get_irn_register_out(node, 0);
 	const bpf_const_attr_t *attr = get_bpf_const_attr_const(node);
-	printf("r%d = %lld\n", dest_reg->index, attr->val);
-	emit(BPF_ALU64_IMM(BPF_MOV, dest_reg->index, attr->val));
+
+	if (attr->is_mapfd) {
+		printf("r%d = map[%lld]\n", dest_reg->index, attr->val);
+		emit2(BPF_LD_MAP_FD(dest_reg->index, attr->val));
+	}else {
+		printf("r%d = %lld\n", dest_reg->index, attr->val);
+		emit(BPF_ALU64_IMM(BPF_MOV, dest_reg->index, attr->val));
+	}
+	
 }
 
 static void emit_bpf_call(const ir_node *node)
@@ -321,6 +328,19 @@ void bpf_emit_function(ir_graph *irg)
 	if (global_emitter == NULL)
 		global_emitter = malloc(sizeof(struct bpf_emitter));
 
+	global_emitter->pos = 0;
+	
+	emit(BPF_ALU64_IMM(BPF_MOV, 2, 0));
+	emit(BPF_STX_MEM(BPF_DW, 10, 2, -8));
+	emit(BPF_STX_MEM(BPF_DW, 10, 2, -16));
+	emit(BPF_STX_MEM(BPF_DW, 10, 2, -24));
+	emit(BPF_STX_MEM(BPF_DW, 10, 2, -32));
+	emit(BPF_STX_MEM(BPF_DW, 10, 2, -40));
+	emit(BPF_STX_MEM(BPF_DW, 10, 2, -48));
+	emit(BPF_STX_MEM(BPF_DW, 10, 2, -56));
+	emit(BPF_STX_MEM(BPF_DW, 10, 2, -64));
+	emit(BPF_STX_MEM(BPF_DW, 10, 2, -72));
+
 	/* register all emitter functions */
 	bpf_register_emitters();
 
@@ -329,7 +349,7 @@ void bpf_emit_function(ir_graph *irg)
 
 	/* emit assembler prolog */
 	ir_entity *entity = get_irg_entity(irg);
-	be_gas_emit_function_prolog(entity, 4, NULL);
+	be_gas_emit_function_prolog(entity, 8, NULL);
 
 	/* populate jump link fields with their destinations */
 	ir_reserve_resources(irg, IR_RESOURCE_IRN_LINK);

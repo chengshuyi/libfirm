@@ -12,6 +12,7 @@
 
 #include "firm_types.h"
 
+#define BPF_PSEUDO_MAP_FD	1
 
 /* Instruction classes */
 #define BPF_CLASS(code) ((code) & 0x07)
@@ -207,13 +208,13 @@ struct bpf_insn {
 		.dst_reg = DST,					\
 		.src_reg = SRC,					\
 		.off   = 0,					\
-		.imm   = (__u32) (IMM) }),			\
+		.imm   = (uint32_t) (IMM) }),			\
 	((struct bpf_insn) {					\
 		.code  = 0, /* zero is reserved opcode */	\
 		.dst_reg = 0,					\
 		.src_reg = 0,					\
 		.off   = 0,					\
-		.imm   = ((__u64) (IMM)) >> 32 })
+		.imm   = ((uint64_t) (IMM)) >> 32 })
 
 /* pseudo BPF_LD_IMM64 insn used to refer to process-local map_fd */
 #define BPF_LD_MAP_FD(DST, MAP_FD)				\

@@ -59,10 +59,11 @@ void bpf_set_imm_attr(ir_node *res, int32_t imm)
 	arch_add_irn_flags(res, (arch_irn_flags_t)bpf_arch_irn_flag_immediate_form);
 }
 
-void init_bpf_const_attr(ir_node *res, int64_t value)
+void init_bpf_const_attr(ir_node *res, int64_t value, int is_mapfd)
 {
 	bpf_const_attr_t *attr = (bpf_const_attr_t *)get_irn_generic_attr(res);
 	attr->val = value;
+	attr->is_mapfd = is_mapfd;
 }
 
 void init_bpf_call_attr(ir_node *res, ir_entity *entity, int32_t func_id)

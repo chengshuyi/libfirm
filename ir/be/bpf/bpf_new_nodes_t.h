@@ -23,7 +23,7 @@ int bpf_attrs_equal(const ir_node *a, const ir_node *b);
 void bpf_set_imm_attr(ir_node *res, int32_t imm);
 void init_bpf_load_store_attributes(ir_node *res, uint16_t offset, int32_t imm, bool is_imm);
 
-void init_bpf_const_attr(ir_node *res, int64_t value);
+void init_bpf_const_attr(ir_node *res, int64_t value, int is_mapfd);
 void init_bpf_call_attr(ir_node *res, ir_entity *entity, int32_t func_id);
 void init_bpf_mapfd_attr(ir_node *res, int32_t offset);
 void init_bpf_member_attr(ir_node *res, ir_entity *entity, int32_t offset);

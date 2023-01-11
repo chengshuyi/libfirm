@@ -560,6 +560,16 @@ int (is_Const_all_one)(const ir_node *node)
 	return is_Const_all_one_(node);
 }
 
+void set_Const_mapfd(ir_node *node) {
+	assert(is_Const(node));
+	node->attr.con.is_mapfd = true;
+}
+
+FIRM_API int get_Const_is_mapfd(ir_node *node) {
+	assert(is_Const(node));
+	return node->attr.con.is_mapfd;
+}
+
 const char *get_builtin_kind_name(ir_builtin_kind kind)
 {
 #define X(a)    case a: return #a

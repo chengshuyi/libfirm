@@ -108,6 +108,7 @@ typedef struct cond_attr {
 /** Attributes for Const nodes. */
 typedef struct const_attr {
 	ir_tarval *tarval;  /**< The value. */
+	bool is_mapfd;
 } const_attr;
 
 /** Attributes for Address and Offset nodes. */

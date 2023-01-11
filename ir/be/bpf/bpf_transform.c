@@ -156,7 +156,7 @@ static ir_node *gen_Const(ir_node *node)
 	ir_tarval *tv = get_Const_tarval(node);
 
 	int64_t val = (int32_t)get_tarval_long(tv);
-	return new_bd_bpf_Const(dbgi, block, val);
+	return new_bd_bpf_Const(dbgi, block, val, get_Const_is_mapfd(node));
 }
 
 // static ir_node *gen_Address(ir_node *node)

@@ -123,8 +123,8 @@ Const => {
 	op_flags   => [ "constlike" ],
 	irn_flags  => [ "rematerializable" ],
 	out_reqs   => [ "gp" ],
-	attr     => "int64_t value",
-	init     => "init_bpf_const_attr(res, value);",
+	attr     => "int64_t value, int is_mapfd",
+	init     => "init_bpf_const_attr(res, value, is_mapfd);",
 	attr_type => "bpf_const_attr_t",
 },
 
