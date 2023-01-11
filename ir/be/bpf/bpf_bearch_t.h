@@ -10,5 +10,13 @@
 #ifndef FIRM_BE_BPF_BPF_BEARCH_T_H
 #define FIRM_BE_BPF_BPF_BEARCH_T_H
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "beirg.h"
+#include "firm_types.h"
+#include "pmap.h"
+
+void bpf_finish_graph(ir_graph *irg);
 
 #endif

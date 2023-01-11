@@ -43,13 +43,6 @@ typedef ir_node *(*new_binop_func)(dbg_info *dbgi, ir_node *block,
 typedef ir_node *(*new_binop_reg_func)(dbg_info *dbgi, ir_node *block, ir_node *op1, ir_node *op2);
 typedef ir_node *(*new_binop_imm_func)(dbg_info *dbgi, ir_node *block, ir_node *op1, ir_entity *entity, int32_t immediate);
 
-static ir_node *transform_const(ir_node *const node, ir_entity *const entity, ir_tarval *const value)
-{
-	ir_node *const block = be_transform_nodes_block(node);
-	dbg_info *const dbgi = get_irn_dbg_info(node);
-	return new_bd_bpf_Const(dbgi, block, entity, value);
-}
-
 static ir_node *transform_binop(ir_node *node, new_binop_func new_func)
 {
 	ir_node *new_block = be_transform_nodes_block(node);
@@ -157,8 +150,13 @@ static ir_node *gen_Not(ir_node *node)
 
 static ir_node *gen_Const(ir_node *node)
 {
-	ir_tarval *const value = get_Const_tarval(node);
-	return transform_const(node, NULL, value);
+	dbg_info *dbgi = get_irn_dbg_info(node);
+	ir_node *block = be_transform_nodes_block(node);
+	ir_mode *mode = get_irn_mode(node);
+	ir_tarval *tv = get_Const_tarval(node);
+
+	int64_t val = (int32_t)get_tarval_long(tv);
+	return new_bd_bpf_Const(dbgi, block, val);
 }
 
 // static ir_node *gen_Address(ir_node *node)
@@ -178,17 +176,19 @@ static ir_node *gen_Conv(ir_node *node)
 	if (src_mode == dst_mode)
 		return be_transform_node(op);
 
-	ir_node  *block    = be_transform_nodes_block(node);
-	int       src_bits = get_mode_size_bits(src_mode);
-	int       dst_bits = get_mode_size_bits(dst_mode);
-	dbg_info *dbgi     = get_irn_dbg_info(node);
+	ir_node *block = be_transform_nodes_block(node);
+	int src_bits = get_mode_size_bits(src_mode);
+	int dst_bits = get_mode_size_bits(dst_mode);
+	dbg_info *dbgi = get_irn_dbg_info(node);
 
-	if (src_bits >= dst_bits) {
+	if (src_bits >= dst_bits)
+	{
 		/* kill unnecessary conv */
 		return be_transform_node(op);
 	}
 
-	if (be_upper_bits_clean(op, src_mode)) {
+	if (be_upper_bits_clean(op, src_mode))
+	{
 		return be_transform_node(op);
 	}
 	ir_node *new_op = be_transform_node(op);
@@ -253,11 +253,13 @@ static ir_node *gen_Call(ir_node *node)
 	ir_entity *entity = NULL;
 	int32_t func_id = 0;
 	int32_t i = 0;
-	if (is_Address(callee)) {
+	if (is_Address(callee))
+	{
 		entity = get_Address_entity(callee);
 
-		ident *id =  get_entity_ident(entity);
-		for (i =0; ; i++) {
+		ident *id = get_entity_ident(entity);
+		for (i = 0;; i++)
+		{
 			if (id[i] == ':')
 				break;
 		}
@@ -266,7 +268,7 @@ static ir_node *gen_Call(ir_node *node)
 
 		func_id = atoi(&id[i]);
 	}
-	
+
 	res = new_bd_bpf_Call_helper(dbgi, new_block, in_arity, in, in_req, out_arity, entity, func_id);
 	arch_set_irn_register_req_out(res, pn_bpf_Call_M, arch_memory_req);
 
@@ -281,56 +283,68 @@ static ir_node *gen_Call(ir_node *node)
 	return res;
 }
 
-typedef struct address_t {
-	ir_node   *ptr;
+typedef struct address_t
+{
+	ir_node *base;
 	ir_entity *entity;
-	uint16_t    offset;
+	uint16_t offset;
+	bool is_frame_entity;
 } address_t;
 
-static void match_address(ir_node *ptr, address_t *address)
+static void match_address(ir_node *addr, address_t *address)
 {
-	ir_node *base = ptr;
 	uint16_t offset = 0;
 
-	if (is_Add(base)) {
-		ir_node *right = get_Add_right(base);
-		if (is_Const(right)) {
-			base = get_Add_left(base);
+	if (is_Add(addr))
+	{
+		ir_node *right = get_Add_right(addr);
+		if (is_Const(right))
+		{
+			addr = get_Add_left(addr);
 			offset = get_Const_long(right);
 		}
 	}
 	// todo: handle Member node
-	// base = ptr;
-	// if (is_Member(base)) {
-	// 	base = get_Member_ptr(base);
-	// 	assert(is_Proj(base) && is_Start(get_Proj_pred(base)));
-	// }
-	// base = be_transform_node(base);
+	ir_entity *entity = NULL;
+	if (is_Member(addr))
+	{
+		entity = get_Member_entity(addr);
+		addr = get_Member_ptr(addr);
+		/* Must be the frame pointer. All other sels must have been lowered
+		 * already. */
+		assert(is_Proj(addr) && is_Start(get_Proj_pred(addr)));
+	}
 
-	address->ptr = base;
+	ir_node *const base = be_transform_node(addr);
+
+	address->base = base;
 	address->offset = offset;
+	address->entity = entity;
+	address->is_frame_entity = entity != NULL;
 }
 
 static ir_node *gen_Load(ir_node *node)
 {
+	address_t address;
 	ir_node *new_block = be_transform_nodes_block(node);
 	dbg_info *dbgi = get_irn_dbg_info(node);
 	ir_node *ptr = get_Load_ptr(node);
-	ir_node *new_ptr = be_transform_node(ptr);
+	// ir_node *new_ptr = be_transform_node(ptr);
+	match_address(ptr, &address);
 	ir_node *mem = get_Load_mem(node);
 	ir_node *new_mem = be_transform_node(mem);
 	ir_mode *mode = get_Load_mode(node);
-	
-	return new_bd_bpf_Load_reg(dbgi, new_block, new_mem, new_ptr, NULL, 0);
+
+	return new_bd_bpf_Load_reg(dbgi, new_block, new_mem, address.base, address.entity, address.offset, address.is_frame_entity);
 }
 
 static ir_node *gen_Member(ir_node *node)
 {
-	dbg_info  *dbgi      = get_irn_dbg_info(node);
-	ir_node   *new_block = be_transform_nodes_block(node);
-	ir_node   *ptr       = get_Member_ptr(node);
-	ir_node   *new_ptr   = be_transform_node(ptr);
-	ir_entity *entity    = get_Member_entity(node);
+	dbg_info *dbgi = get_irn_dbg_info(node);
+	ir_node *new_block = be_transform_nodes_block(node);
+	ir_node *ptr = get_Member_ptr(node);
+	ir_node *new_ptr = be_transform_node(ptr);
+	ir_entity *entity = get_Member_entity(node);
 
 	/* must be the frame pointer all other sels must have been lowered
 	 * already */
@@ -350,14 +364,10 @@ static ir_node *gen_Store(ir_node *node)
 	ir_mode *mode = get_irn_mode(node);
 	address_t address;
 	match_address(ptr, &address);
-	
+
 	val = be_skip_downconv(val, false);
-	// if (is_Const(val)) {
-	// 	int32_t imm = get_Const_long(val);
-	// 	return new_bd_bpf_Store_imm(dbgi, new_block, new_mem, address.ptr, address.offset, imm);
-	// }
 	val = be_transform_node(val);
-	return new_bd_bpf_Store_reg(dbgi, new_block, new_mem, val, address.ptr, NULL, address.offset);
+	return new_bd_bpf_Store_reg(dbgi, new_block, new_mem, val, address.base, address.entity, address.offset, address.is_frame_entity);
 }
 
 static ir_node *gen_Jmp(ir_node *node)
@@ -391,28 +401,29 @@ static ir_node *gen_Start(ir_node *node)
 
 static ir_node *gen_Return(ir_node *node)
 {
-	int                               p     = n_bpf_Return_first_result;
-	unsigned                    const n_res = get_Return_n_ress(node);
-	unsigned                    const n_ins = p + n_res;
-	ir_node                   **const in    = ALLOCAN(ir_node*, n_ins);
-	ir_graph                   *const irg   = get_irn_irg(node);
-	arch_register_req_t const **const reqs  = be_allocate_in_reqs(irg, n_ins);
+	int p = n_bpf_Return_first_result;
+	unsigned const n_res = get_Return_n_ress(node);
+	unsigned const n_ins = p + n_res;
+	ir_node **const in = ALLOCAN(ir_node *, n_ins);
+	ir_graph *const irg = get_irn_irg(node);
+	arch_register_req_t const **const reqs = be_allocate_in_reqs(irg, n_ins);
 
-	in[n_bpf_Return_mem]   = be_transform_node(get_Return_mem(node));
+	in[n_bpf_Return_mem] = be_transform_node(get_Return_mem(node));
 	reqs[n_bpf_Return_mem] = arch_memory_req;
 
 	// in[n_bpf_Return_stack]   = get_irg_frame(irg);
 	// reqs[n_bpf_Return_stack] = &bpf_registers[REG_R10];
 
-	for (unsigned i = 0; i != n_res; ++p, ++i) {
+	for (unsigned i = 0; i != n_res; ++p, ++i)
+	{
 		ir_node *const res = get_Return_res(node, i);
-		in[p]   = be_transform_node(res);
+		in[p] = be_transform_node(res);
 		reqs[p] = arch_get_irn_register_req(in[p])->cls->class_req;
 	}
 
-	dbg_info *const dbgi  = get_irn_dbg_info(node);
-	ir_node  *const block = be_transform_nodes_block(node);
-	ir_node  *const ret   = new_bd_bpf_Return(dbgi, block, n_ins, in, reqs);
+	dbg_info *const dbgi = get_irn_dbg_info(node);
+	ir_node *const block = be_transform_nodes_block(node);
+	ir_node *const ret = new_bd_bpf_Return(dbgi, block, n_ins, in, reqs);
 	return ret;
 }
 
@@ -500,10 +511,11 @@ static ir_node *gen_Proj_Start(ir_node *node)
 
 static ir_node *gen_Proj_Call(ir_node *node)
 {
-	unsigned pn        = get_Proj_num(node);
-	ir_node *call      = get_Proj_pred(node);
-	ir_node *new_call  = be_transform_node(call);
-	switch ((pn_Call)pn) {
+	unsigned pn = get_Proj_num(node);
+	ir_node *call = get_Proj_pred(node);
+	ir_node *new_call = be_transform_node(call);
+	switch ((pn_Call)pn)
+	{
 	case pn_Call_M:
 		return be_new_Proj(new_call, pn_bpf_Call_M);
 	case pn_Call_X_regular:
@@ -545,7 +557,7 @@ static void bpf_register_transformers(void)
 	be_set_transform_proj_function(op_Proj, gen_Proj_Proj);
 	be_set_transform_proj_function(op_Start, gen_Proj_Start);
 	be_set_transform_proj_function(op_Store, gen_Proj_Store);
-	be_set_transform_proj_function(op_Call,        gen_Proj_Call);
+	be_set_transform_proj_function(op_Call, gen_Proj_Call);
 }
 
 static const unsigned ignore_regs[] = {

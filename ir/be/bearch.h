@@ -322,6 +322,10 @@ struct arch_isa_if_t {
 	 * number of cycles necessary to execute the instruction.
 	 */
 	unsigned (*get_op_estimated_cost)(const ir_node *irn);
+
+	void *(*get_bytecode)(void);
+	int (*bytecode_size)(void);
+	
 };
 
 static inline bool arch_irn_is_ignore(const ir_node *irn)

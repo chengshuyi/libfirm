@@ -125,6 +125,16 @@ FIRM_API void be_dwarf_set_source_language(dwarf_source_language language);
  */
 FIRM_API void be_dwarf_set_compilation_directory(const char *directory);
 
+/**
+ * get bytecode pointer
+ */
+FIRM_API void *be_get_bytecode(void);
+
+/**
+ * get bytecode size
+ */
+FIRM_API int be_bytecode_size(void);
+
 /** @} */
 
 #include "end.h"

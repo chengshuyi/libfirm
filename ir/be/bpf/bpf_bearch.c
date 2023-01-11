@@ -7,6 +7,9 @@
  * @file
  * @brief    The main bpf backend driver file.
  */
+
+#include "bpf_bearch_t.h"
+
 #include "bpf_emitter.h"
 #include "bpf_new_nodes.h"
 #include "bpf_transform.h"
@@ -99,6 +102,7 @@ static void bpf_generate_code(FILE *output, const char *cup_name)
 		be_fix_stack_nodes(irg, &bpf_registers[REG_R10]);
 		be_birg_from_irg(irg)->non_ssa_regs = NULL;
 
+		bpf_finish_graph(irg);
 		bpf_emit_function(irg);
 
 		be_step_last(irg);
@@ -160,6 +164,8 @@ arch_isa_if_t const bpf_isa_if = {
 	.generate_code         = bpf_generate_code,
 	.lower_for_target      = bpf_lower_for_target,
 	.get_op_estimated_cost = bpf_get_op_estimated_cost,
+	.get_bytecode = bpf_get_bytecode,
+	.bytecode_size = bpf_bytecode_size,
 };
 
 BE_REGISTER_MODULE_CONSTRUCTOR(be_init_arch_bpf)

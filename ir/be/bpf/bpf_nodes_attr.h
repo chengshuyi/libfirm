@@ -26,6 +26,11 @@ enum sparc_arch_irn_flags_t {
 	bpf_arch_irn_flag_has_delay_slot        = arch_irn_flag_backend << 3,
 };
 
+typedef struct bpf_const_attr_t bpf_const_attr_t;
+struct bpf_const_attr_t
+{
+	int64_t val;
+};
 
 typedef struct bpf_call_attr_t bpf_call_attr_t;
 struct bpf_call_attr_t
@@ -53,17 +58,12 @@ struct bpf_imm_attr_t
 	int32_t imm32;
 };
 
-typedef struct bpf_const_attr_t bpf_const_attr_t;
-struct bpf_const_attr_t 
-{
-	int64_t imm64;
-};
-
 typedef struct bpf_load_attr_t bpf_load_attr_t;
 struct bpf_load_attr_t 
 {
 	ir_entity *entity;
 	int16_t offset;
+	bool is_frame_entity;
 };
 
 typedef struct bpf_store_attr_t bpf_store_attr_t;
@@ -71,6 +71,7 @@ struct bpf_store_attr_t
 {
 	ir_entity *entity;
 	int16_t offset;
+	bool is_frame_entity;
 };
 /**
  * base eBPF attribute

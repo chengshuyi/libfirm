@@ -583,6 +583,16 @@ void be_main(FILE *file_handle, const char *cup_name)
 	ir_target.isa->generate_code(file_handle, cup_name);
 }
 
+void *be_get_bytecode(void)
+{
+	return ir_target.isa->get_bytecode();
+}
+
+int be_bytecode_size(void)
+{
+	return ir_target.isa->bytecode_size();
+}
+
 ir_jit_function_t *be_jit_compile(ir_jit_segment_t *const segment,
                                   ir_graph *const irg)
 {

@@ -237,7 +237,6 @@ void be_layout_frame_type(ir_type *const frame, int const begin,
 			size      = get_type_size(type);
 			alignment = MAX(alignment, type_alignment);
 		}
-
 		offset -= size;
 		offset  = -round_up2_misaligned(-offset, alignment, misalign);
 		set_entity_offset(member, offset);

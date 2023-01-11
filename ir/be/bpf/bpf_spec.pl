@@ -2,7 +2,7 @@
 $arch = "bpf";
 
 # Modes
-$mode_gp = "mode_Iu"; # mode used by general purpose registers
+$mode_gp = "mode_Lu"; # mode used by general purpose registers
 
 # The node description is done as a perl hash initializer with the
 # following structure:
@@ -50,6 +50,7 @@ $mode_gp = "mode_Iu"; # mode used by general purpose registers
 # 定义一些私有的attr类型
 %init_attr = (
 	bpf_attr_t => "",
+	bpf_const_attr_t => "",
 	bpf_call_attr_t => "",
 	bpf_mapfd_attr_t => "",
 	bpf_member_attr_t => "",
@@ -119,9 +120,12 @@ Minus => { template => $unop },
 # Not => { template => $unop },
 
 Const => {
-	template => $constop,
-	attr     => "ir_entity *entity, ir_tarval *value",
-	init     => "set_bpf_value(res, entity, value);",
+	op_flags   => [ "constlike" ],
+	irn_flags  => [ "rematerializable" ],
+	out_reqs   => [ "gp" ],
+	attr     => "int64_t value",
+	init     => "init_bpf_const_attr(res, value);",
+	attr_type => "bpf_const_attr_t",
 },
 
 # Control Flow
@@ -173,8 +177,8 @@ Load => {
 		reg => {
 			in_reqs => ["mem", "gp"],
 			ins => ["mem", "ptr"],
-			attr => "ir_entity *entity, int16_t offset",
-			init => "init_bpf_load_attr(res, entity, offset);",
+			attr => "ir_entity *entity, int16_t offset, bool is_frame_entity",
+			init => "init_bpf_load_attr(res, entity, offset, is_frame_entity);",
 		},
 	},
 
@@ -209,8 +213,8 @@ Store => {
 		reg => {
 			in_reqs => ["mem", "gp", "gp"],
 			ins => ["mem", "val", "ptr"],
-			attr => "ir_entity *entity, uint16_t offset",
-			init => "init_bpf_store_attr(res, entity, offset);",
+			attr => "ir_entity *entity, uint16_t offset, bool is_frame_entity",
+			init => "init_bpf_store_attr(res, entity, offset, is_frame_entity);",
 		},
 	},
 
