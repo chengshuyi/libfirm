@@ -183,7 +183,7 @@ static void emit_bpf_load(const ir_node *node)
 	const bpf_load_attr_t *attr = get_bpf_load_attr_const(node);
 	printf("r%d = *(u64 *)(r%d + %d)\n", dest_reg->index, ptr_reg->index,  attr->offset);
 
-	emit(BPF_LDX_MEM(8, dest_reg->index, ptr_reg->index, attr->offset));
+	emit(BPF_LDX_MEM(BPF_DW, dest_reg->index, ptr_reg->index, attr->offset));
 }
 
 static void emit_bpf_minus(const ir_node *node)
@@ -252,7 +252,7 @@ static void emit_bpf_store(const ir_node *node)
 	const bpf_store_attr_t *attr = get_bpf_store_attr_const(node);
 	printf("*(u64 *)(r%d + %d) = r%d\n", ptr_reg->index, attr->offset, val_reg->index);
 
-	emit(BPF_STX_MEM(8, ptr_reg->index, val_reg->index, attr->offset));
+	emit(BPF_STX_MEM(BPF_DW, ptr_reg->index, val_reg->index, attr->offset));
 }
 
 static void emit_bpf_sub(const ir_node *node)
