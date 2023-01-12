@@ -266,6 +266,9 @@ FIRM_API int is_Const_one(const ir_node *node);
 /** Returns non-zero if the given Const node represents the constant with all bits set. */
 FIRM_API int is_Const_all_one(const ir_node *node);
 
+FIRM_API void set_Const_mapfd(ir_node *node);
+
+FIRM_API int get_Const_is_mapfd(ir_node *node);
 /** @} */
 
 /**

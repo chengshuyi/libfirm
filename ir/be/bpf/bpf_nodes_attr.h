@@ -29,8 +29,10 @@ enum sparc_arch_irn_flags_t {
 typedef struct bpf_const_attr_t bpf_const_attr_t;
 struct bpf_const_attr_t
 {
+	int64_t value;
 	int64_t val;
 	int is_mapfd;
+	ir_mode *mode;
 };
 
 typedef struct bpf_call_attr_t bpf_call_attr_t;

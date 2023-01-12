@@ -137,11 +137,22 @@ static void emit_bpf_const(const ir_node *node)
 	const bpf_const_attr_t *attr = get_bpf_const_attr_const(node);
 
 	if (attr->is_mapfd) {
-		printf("r%d = map[%lld]\n", dest_reg->index, attr->val);
-		emit2(BPF_LD_MAP_FD(dest_reg->index, attr->val));
+		printf("r%d = map[%lld]\n", dest_reg->index, attr->value);
+		emit2(BPF_LD_MAP_FD(dest_reg->index, attr->value));
+	
 	}else {
-		printf("r%d = %lld\n", dest_reg->index, attr->val);
-		emit(BPF_ALU64_IMM(BPF_MOV, dest_reg->index, attr->val));
+
+		if (attr->mode == mode_Lu) {
+			if (attr->value >= 0xffffffff) {
+				emit2(BPF_LD_IMM64(dest_reg->index, attr->value));
+				return;
+			}
+			printf("constant is %llu\n", attr->value);
+		}
+
+		
+		printf("r%d = %lld\n", dest_reg->index, attr->value);
+		emit(BPF_ALU64_IMM(BPF_MOV, dest_reg->index, attr->value));
 	}
 	
 }
