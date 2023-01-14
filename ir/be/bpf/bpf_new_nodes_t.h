@@ -27,7 +27,7 @@ void init_bpf_const_attr(ir_node *res, int64_t value, ir_mode *mode, int is_mapf
 void init_bpf_call_attr(ir_node *res, ir_entity *entity, int32_t func_id);
 void init_bpf_mapfd_attr(ir_node *res, int32_t offset);
 void init_bpf_member_attr(ir_node *res, ir_entity *entity, int32_t offset);
-void init_bpf_load_attr(ir_node *res, ir_entity *entity, int16_t offset, bool is_frame_entity);
+void init_bpf_load_attr(ir_node *res, ir_entity *entity, ir_mode *mode, int16_t offset, bool is_frame_entity);
 void init_bpf_store_attr(ir_node *res, ir_entity *entity, int16_t offset, bool is_frame_entity);
 
 int bpf_const_attrs_equal(const ir_node *a, const ir_node *b);

@@ -177,8 +177,8 @@ Load => {
 		reg => {
 			in_reqs => ["mem", "gp"],
 			ins => ["mem", "ptr"],
-			attr => "ir_entity *entity, int16_t offset, bool is_frame_entity",
-			init => "init_bpf_load_attr(res, entity, offset, is_frame_entity);",
+			attr => "ir_entity *entity, ir_mode *mode, int16_t offset, bool is_frame_entity",
+			init => "init_bpf_load_attr(res, entity, mode, offset, is_frame_entity);",
 		},
 	},
 

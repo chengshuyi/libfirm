@@ -65,6 +65,7 @@ typedef struct bpf_load_attr_t bpf_load_attr_t;
 struct bpf_load_attr_t 
 {
 	ir_entity *entity;
+	ir_mode *mode;
 	int16_t offset;
 	bool is_frame_entity;
 };

@@ -334,7 +334,7 @@ static ir_node *gen_Load(ir_node *node)
 	ir_node *new_mem = be_transform_node(mem);
 	ir_mode *mode = get_Load_mode(node);
 
-	return new_bd_bpf_Load_reg(dbgi, new_block, new_mem, address.base, address.entity, address.offset, address.is_frame_entity);
+	return new_bd_bpf_Load_reg(dbgi, new_block, new_mem, address.base, address.entity, mode, address.offset, address.is_frame_entity);
 }
 
 static ir_node *gen_Member(ir_node *node)

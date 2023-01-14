@@ -87,10 +87,11 @@ void init_bpf_member_attr(ir_node *res, ir_entity *entity, int32_t offset)
 	attr->offset = offset;
 }
 
-void init_bpf_load_attr(ir_node *res, ir_entity *entity, int16_t offset, bool is_frame_entity)
+void init_bpf_load_attr(ir_node *res, ir_entity *entity, ir_mode *mode, int16_t offset, bool is_frame_entity)
 {
 	bpf_load_attr_t *attr = (bpf_load_attr_t *)get_irn_generic_attr(res);
 	attr->entity = entity;
+	attr->mode = mode;
 	attr->offset = offset;
 	attr->is_frame_entity = is_frame_entity;
 }
@@ -185,7 +186,7 @@ int bpf_load_attrs_equal(const ir_node *a, const ir_node *b)
 {
 	const bpf_load_attr_t *attr_a = (bpf_load_attr_t *)get_irn_generic_attr(a);
 	const bpf_load_attr_t *attr_b = (bpf_load_attr_t *)get_irn_generic_attr(b);
-	return attr_a->entity == attr_b->entity && attr_a->offset == attr_b->offset;
+	return attr_a->entity == attr_b->entity && attr_a->offset == attr_b->offset && attr_a->mode == attr_b->mode;
 }
 
 int bpf_store_attrs_equal(const ir_node *a, const ir_node *b)

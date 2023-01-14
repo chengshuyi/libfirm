@@ -199,9 +199,28 @@ static void emit_bpf_load(const ir_node *node)
 	const arch_register_t *ptr_reg = arch_get_irn_register_in(node, 1);
 	const arch_register_t *dest_reg = arch_get_irn_register_out(node, 0);
 	const bpf_load_attr_t *attr = get_bpf_load_attr_const(node);
-	printf("r%d = *(u64 *)(r%d + %d)\n", dest_reg->index, ptr_reg->index,  attr->offset);
 
-	emit(BPF_LDX_MEM(BPF_DW, dest_reg->index, ptr_reg->index, attr->offset));
+	int sz = get_mode_size_bits(attr->mode);
+	
+	printf("r%d = *(u%d *)(r%d + %d)\n", dest_reg->index, sz, ptr_reg->index,  attr->offset);
+
+	switch(sz) {
+		case 8:
+		emit(BPF_LDX_MEM(BPF_B, dest_reg->index, ptr_reg->index, attr->offset));
+		break;
+		case 16:
+		emit(BPF_LDX_MEM(BPF_H, dest_reg->index, ptr_reg->index, attr->offset));
+		break;
+		case 32:
+		emit(BPF_LDX_MEM(BPF_W, dest_reg->index, ptr_reg->index, attr->offset));
+		break;
+		case 64:
+		emit(BPF_LDX_MEM(BPF_DW, dest_reg->index, ptr_reg->index, attr->offset));
+		break;
+		default:
+		panic("load size is wrong: %d", sz);
+	}
+	
 }
 
 static void emit_bpf_minus(const ir_node *node)
