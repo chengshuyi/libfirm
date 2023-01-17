@@ -23,6 +23,8 @@ int bpf_attrs_equal(const ir_node *a, const ir_node *b);
 void bpf_set_imm_attr(ir_node *res, int32_t imm);
 void init_bpf_load_store_attributes(ir_node *res, uint16_t offset, int32_t imm, bool is_imm);
 
+void init_bpf_condjmp_attr(ir_node *res, ir_relation relation);
+void init_bpf_cmp_attr(ir_node *res, int32_t imm32, bool is_imm);
 void init_bpf_const_attr(ir_node *res, int64_t value, ir_mode *mode, int is_mapfd);
 void init_bpf_call_attr(ir_node *res, ir_entity *entity, int32_t func_id);
 void init_bpf_mapfd_attr(ir_node *res, int32_t offset);
@@ -30,6 +32,8 @@ void init_bpf_member_attr(ir_node *res, ir_entity *entity, int32_t offset);
 void init_bpf_load_attr(ir_node *res, ir_entity *entity, ir_mode *mode, int16_t offset, bool is_frame_entity);
 void init_bpf_store_attr(ir_node *res, ir_entity *entity, int16_t offset, bool is_frame_entity);
 
+int bpf_condjmp_attrs_equal(const ir_node *a, const ir_node *b);
+int bpf_cmp_attrs_equal(const ir_node *a, const ir_node *b);
 int bpf_const_attrs_equal(const ir_node *a, const ir_node *b);
 int bpf_call_attrs_equal(const ir_node *a, const ir_node *b);
 int bpf_mapfd_attrs_equal(const ir_node *a, const ir_node *b);

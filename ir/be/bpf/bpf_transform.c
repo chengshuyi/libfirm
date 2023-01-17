@@ -525,6 +525,41 @@ static ir_node *gen_Proj_Call(ir_node *node)
 	panic("unexpected Call proj %u", pn);
 }
 
+static ir_node *gen_Cond(ir_node *node)
+{
+	ir_node    *selector  = get_Cond_selector(node);
+	ir_node    *block     = be_transform_nodes_block(node);
+	dbg_info   *dbgi      = get_irn_dbg_info(node);
+	ir_node    *flag_node = be_transform_node(selector);
+	ir_relation relation  = get_Cmp_relation(selector);
+
+	return new_bd_bpf_CondJmp(dbgi, block, flag_node, relation);
+}
+
+static ir_node *gen_Cmp(ir_node *node)
+{
+	ir_node  *block    = be_transform_nodes_block(node);
+	ir_node  *op1      = get_Cmp_left(node);
+	ir_node  *op2      = get_Cmp_right(node);
+	ir_mode  *cmp_mode = get_irn_mode(op1);
+	dbg_info *dbgi     = get_irn_dbg_info(node);
+	
+	assert(get_irn_mode(op2) == cmp_mode);
+	bool is_unsigned = !mode_is_signed(cmp_mode);
+
+	/* integer compare, TODO: use shifter_op in all its combinations */
+	ir_node *new_op1 = be_transform_node(op1);
+
+	if (is_Const(op2)) {
+
+	}
+
+	ir_node *new_op2 = be_transform_node(op2);
+	return NULL;
+	
+}
+
+
 static void bpf_register_transformers(void)
 {
 	be_start_transform_setup();
@@ -551,6 +586,8 @@ static void bpf_register_transformers(void)
 	be_set_transform_function(op_Start, gen_Start);
 	be_set_transform_function(op_Store, gen_Store);
 	be_set_transform_function(op_Sub, gen_Sub);
+	be_set_transform_function(op_Cond, gen_Cond);
+	be_set_transform_function(op_Cmp, gen_Cmp);
 
 	be_set_transform_proj_function(op_Load, gen_Proj_Load);
 	be_set_transform_proj_function(op_Proj, gen_Proj_Proj);

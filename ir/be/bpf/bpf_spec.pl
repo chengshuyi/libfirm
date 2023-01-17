@@ -3,6 +3,7 @@ $arch = "bpf";
 
 # Modes
 $mode_gp = "mode_Lu"; # mode used by general purpose registers
+$mode_flags = "mode_Iu";
 
 # The node description is done as a perl hash initializer with the
 # following structure:
@@ -45,6 +46,11 @@ $mode_gp = "mode_Lu"; # mode used by general purpose registers
 			{ name => "r10" },  # framepointer
 		]
 	},
+	flags => {
+		flags => "manual_ra",
+		mode => $mode_flags,
+		registers => [ { name => "todo" }, ]
+	},
 );
 
 # 定义一些私有的attr类型
@@ -56,7 +62,9 @@ $mode_gp = "mode_Lu"; # mode used by general purpose registers
 	bpf_member_attr_t => "",
 	bpf_load_attr_t => "",
 	bpf_store_attr_t => "",
-	bpf_load_store_attr_t => ""
+	bpf_load_store_attr_t => "",
+	init_bpf_cmp_attr => "",
+	bpf_condjmp_attr_t => "init_bpf_condjmp_attr(res, relation);",
 );
 
 # rematerializable: 表示是否可以重新计算，而不用spill/reload
@@ -240,6 +248,38 @@ Call => {
 			init => "init_bpf_call_attr(res, entity, func_id);",
 		},
 	},
+},
+
+
+Cmp => {
+	irn_flags => [ "rematerializable" ],
+	out_reqs => [ "flags" ],
+	constructors => {
+		imm => {
+			attr => "int32_t imm32, bool is_imm",
+			init => "init_bpf_cmp_attr(res, imm32, true);",
+			in_reqs => [ "gp" ],
+			ins => ["left"],
+		},
+		reg => {
+			attr => "int32_t imm32, bool is_imm",
+			in_reqs => [ "gp", "gp" ],
+			ins => [ "left", "right" ],
+			init => "init_bpf_cmp_attr(res, 0, false);",
+		},
+	},
+},
+
+CondJmp => {
+	op_flags  => [ "cfopcode", "forking" ],
+	irn_flags => [ "fallthrough", "has_delay_slot" ],
+	state     => "pinned",
+	attr => "ir_relation relation",
+	attr_type => "bpf_condjmp_attr_t",
+	in_reqs => [ "flags" ],
+	ins       => [ "flags" ],
+	out_reqs  => [ "exec", "exec" ],
+	outs      => [ "false", "true" ],
 },
 
 );

@@ -59,6 +59,19 @@ void bpf_set_imm_attr(ir_node *res, int32_t imm)
 	arch_add_irn_flags(res, (arch_irn_flags_t)bpf_arch_irn_flag_immediate_form);
 }
 
+void init_bpf_condjmp_attr(ir_node *res, ir_relation relation)
+{
+	bpf_condjmp_attr_t *attr = (bpf_condjmp_attr_t *)get_irn_cmp_attr(res);
+	attr->relation = relation;
+}
+
+void init_bpf_cmp_attr(ir_node *res, int32_t imm32, bool is_imm)
+{
+	bpf_cmp_attr_t *attr = (bpf_const_attr_t *)get_irn_cmp_attr(res);
+	attr->imm32 = imm32;
+	attr->is_imm = is_imm;
+}
+
 void init_bpf_const_attr(ir_node *res, int64_t value, ir_mode *mode, int is_mapfd)
 {
 	bpf_const_attr_t *attr = (bpf_const_attr_t *)get_irn_generic_attr(res);
@@ -151,6 +164,21 @@ int bpf_attrs_equal(const ir_node *a, const ir_node *b)
 	// return attr_a->value == attr_b->value
 	//     && attr_a->entity == attr_b->entity;
 	return 0;
+}
+
+int bpf_condjmp_attrs_equal(const ir_node *a, const ir_node *b)
+{
+	const bpf_condjmp_attr_t *attr_a = (bpf_condjmp_attr_t *)get_irn_generic_attr(a);
+	const bpf_condjmp_attr_t *attr_b = (bpf_condjmp_attr_t *)get_irn_generic_attr(b);
+	return attr_a->relation == attr_b->relation;
+}
+
+int bpf_cmp_attrs_equal(const ir_node *a, const ir_node *b)
+{
+	const bpf_cmp_attr_t *attr_a = (bpf_cmp_attr_t *)get_irn_generic_attr(a);
+	const bpf_cmp_attr_t *attr_b = (bpf_cmp_attr_t *)get_irn_generic_attr(b);
+
+	return attr_a->imm32 == attr_b->imm32 && attr_a->is_imm == attr_b->is_imm;
 }
 
 int bpf_const_attrs_equal(const ir_node *a, const ir_node *b)

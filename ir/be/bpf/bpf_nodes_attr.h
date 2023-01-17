@@ -26,6 +26,14 @@ enum sparc_arch_irn_flags_t {
 	bpf_arch_irn_flag_has_delay_slot        = arch_irn_flag_backend << 3,
 };
 
+
+typedef struct bpf_cmp_attr_t bpf_cmp_attr_t;
+struct bpf_cmp_attr_t
+{
+	bool is_imm;
+	int32_t imm32;
+};
+
 typedef struct bpf_const_attr_t bpf_const_attr_t;
 struct bpf_const_attr_t
 {
@@ -102,24 +110,9 @@ struct bpf_load_store_attr_t {
 /**
  * attributes for conditional jumps
  */
-typedef struct sparc_jmp_cond_attr_t sparc_jmp_cond_attr_t;
-struct sparc_jmp_cond_attr_t {
-	bpf_attr_t base;    /**< generic attribute */
+typedef struct bpf_condjmp_attr_t bpf_condjmp_attr_t;
+struct bpf_condjmp_attr_t {
 	ir_relation  relation;
-	bool         is_unsigned      : 1;
-	bool         annul_delay_slot : 1;
-};
-
-
-/**
- * attributes for conditional jumps
- */
-typedef struct bpf_jmp_cond_attr_t bpf_jmp_cond_attr_t;
-struct bpf_jmp_cond_attr_t {
-	bpf_attr_t base;    /**< generic attribute */
-	ir_relation  relation;
-	bool         is_unsigned      : 1;
-	bool         annul_delay_slot : 1;
 };
 
 
