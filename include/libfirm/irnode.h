@@ -220,6 +220,12 @@ FIRM_API unsigned get_Block_mark(const ir_node *block);
 /** Sets the Block mark (single bit). */
 FIRM_API void set_Block_mark(ir_node *block, unsigned mark);
 
+FIRM_API void set_Block_first_insn(ir_node *block, unsigned short offset);
+FIRM_API unsigned short get_Block_first_insn(ir_node *block);
+FIRM_API void add_Block_fix_jmp(ir_node *block, unsigned short offset);
+FIRM_API int get_Block_fix_jmp_size(ir_node *block);
+FIRM_API unsigned short get_Block_fix_jmp(ir_node *block, int pos);
+
 /** @} */
 
 /** @addtogroup End

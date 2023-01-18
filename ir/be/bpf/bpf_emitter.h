@@ -439,6 +439,8 @@ int bpf_bytecode_size(void);
 struct bpf_emitter {
     int pos;
     struct bpf_insn insns[4096];
+
+	unsigned short *ret_jmp;
 };
 
 #endif

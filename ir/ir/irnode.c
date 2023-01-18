@@ -451,6 +451,36 @@ void (set_Block_mark)(ir_node *block, unsigned mark)
 	set_Block_mark_(block, mark);
 }
 
+void set_Block_first_insn(ir_node *block, unsigned short offset)
+{
+	assert(is_Block(block));
+	block->attr.block.first_insn = offset;
+}
+
+unsigned short get_Block_first_insn(ir_node *block)
+{
+	assert(is_Block(block));
+	return block->attr.block.first_insn;
+}
+
+void add_Block_fix_jmp(ir_node *block, unsigned short offset)
+{
+	assert(is_Block(block));
+	ARR_APP1(unsigned short, block->attr.block.fix_jmps, offset);
+}
+
+int get_Block_fix_jmp_size(ir_node *block)
+{
+	assert(is_Block(block));
+	return ARR_LEN(block->attr.block.fix_jmps);
+}
+
+unsigned short get_Block_fix_jmp(ir_node *block, int pos)
+{
+	assert(is_Block(block));
+	return block->attr.block.fix_jmps[pos];
+}
+
 void add_End_keepalive(ir_node *end, ir_node *ka)
 {
 	assert(is_End(end));

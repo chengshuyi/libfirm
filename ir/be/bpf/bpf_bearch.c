@@ -95,6 +95,8 @@ static void bpf_generate_code(FILE *output, const char *cup_name)
 
 		be_step_schedule(irg);
 
+		be_sched_fix_flags(irg, &bpf_reg_classes[CLASS_bpf_flags], NULL, NULL, NULL);
+
 		be_step_regalloc(irg, &bpf_regalloc_if);
 
 		// introduce_prologue(irg);

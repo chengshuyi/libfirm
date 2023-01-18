@@ -551,12 +551,12 @@ static ir_node *gen_Cmp(ir_node *node)
 	ir_node *new_op1 = be_transform_node(op1);
 
 	if (is_Const(op2)) {
-
+		// todo: handle signed and unsigned
+		return new_bd_bpf_Cmp_imm(dbgi, block, new_op1, get_Const_long(op2), true);
 	}
 
 	ir_node *new_op2 = be_transform_node(op2);
-	return NULL;
-	
+	return new_bd_bpf_Cmp_reg(dbgi, block, new_op1, new_op2, 0, false);
 }
 
 

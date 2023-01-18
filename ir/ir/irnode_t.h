@@ -98,6 +98,8 @@ typedef struct block_attr {
 	ir_entity  *entity;         /**< entity representing this block */
 	ir_node    *phis;           /**< The list of Phi nodes in this block. */
 	double      execfreq;       /**< block execution frequency */
+	unsigned short *fix_jmps;
+	unsigned short first_insn;
 } block_attr;
 
 /** Attributes for Cond nodes. */
