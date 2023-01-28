@@ -24,7 +24,26 @@
 typedef enum ir_node_us_action {
    us_action_none,
    us_action_stack_map = 1,
-
+   us_action_stack_map_depth1,
+   us_action_stack_map_depth2,
+   us_action_stack_map_depth3,
+   us_action_stack_map_depth4,
+   us_action_stack_map_depth5,
+   us_action_stack_map_depth6,
+   us_action_stack_map_depth7,
+   us_action_stack_map_depth8,
+   us_action_stack_map_depth9,
+   us_action_stack_map_depth10,
+   us_action_stack_map_depth11,
+   us_action_stack_map_depth12,
+   us_action_stack_map_depth13,
+   us_action_stack_map_depth14,
+   us_action_stack_map_depth15,
+   us_action_stack_map_depth16,
+   us_action_stack_map_depth17,
+   us_action_stack_map_depth18,
+   us_action_stack_map_depth19,
+   us_action_stack_map_depth20,
    us_action_ntop,
 } ir_node_us_action_t;
 
