@@ -314,7 +314,9 @@ struct ir_node {
 	ir_loop         *loop;         /**< Loop information. */
 	void            *backend_info;
 	irn_edges_info_t edge_info;    /**< Everlasting out edges. */
-
+	bool is_kernel_memory;
+	int typeid;
+	int us_action;
 	/** Attributes of this node. Depends on opcode. Must be last field. */
 	ir_attr attr;
 };

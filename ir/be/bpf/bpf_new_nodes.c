@@ -59,6 +59,13 @@ void bpf_set_imm_attr(ir_node *res, int32_t imm)
 	arch_add_irn_flags(res, (arch_irn_flags_t)bpf_arch_irn_flag_immediate_form);
 }
 
+void init_bpf_bswap_attr(ir_node *res, uint8_t type, uint8_t size)
+{
+	bpf_bswap_attr_t *attr = (bpf_bswap_attr_t *)get_irn_generic_attr(res);
+	attr->type = type;
+	attr->size = size;
+}
+
 void init_bpf_condjmp_attr(ir_node *res, ir_relation relation)
 {
 	bpf_condjmp_attr_t *attr = (bpf_condjmp_attr_t *)get_irn_generic_attr(res);
@@ -109,11 +116,12 @@ void init_bpf_load_attr(ir_node *res, ir_entity *entity, ir_mode *mode, int16_t 
 	attr->is_frame_entity = is_frame_entity;
 }
 
-void init_bpf_store_attr(ir_node *res, ir_entity *entity, int16_t offset, bool is_frame_entity)
+void init_bpf_store_attr(ir_node *res, ir_entity *entity, ir_mode *mode, int16_t offset, bool is_frame_entity)
 {
 	bpf_store_attr_t *attr = (bpf_store_attr_t *)get_irn_generic_attr(res);
 	attr->entity = entity;
 	attr->offset = offset;
+	attr->mode = mode;
 	attr->is_frame_entity = is_frame_entity;
 }
 
@@ -164,6 +172,14 @@ int bpf_attrs_equal(const ir_node *a, const ir_node *b)
 	// return attr_a->value == attr_b->value
 	//     && attr_a->entity == attr_b->entity;
 	return 0;
+}
+
+
+int bpf_bswap_attrs_equal(const ir_node *a, const ir_node *b)
+{
+	const bpf_bswap_attr_t *attr_a = (bpf_bswap_attr_t *)get_irn_generic_attr(a);
+	const bpf_bswap_attr_t *attr_b = (bpf_bswap_attr_t *)get_irn_generic_attr(b);
+	return attr_a->type == attr_b->type && attr_a->size == attr_b->size;
 }
 
 int bpf_condjmp_attrs_equal(const ir_node *a, const ir_node *b)
@@ -217,6 +233,11 @@ int bpf_load_attrs_equal(const ir_node *a, const ir_node *b)
 	return attr_a->entity == attr_b->entity && attr_a->offset == attr_b->offset && attr_a->mode == attr_b->mode;
 }
 
+const bpf_bswap_attr_t *get_bpf_bswap_attr_const(const ir_node *node)
+{
+	return (const bpf_bswap_attr_t *)get_irn_generic_attr_const(node);
+}
+
 const bpf_condjmp_attr_t *get_bpf_condjmp_attr_const(const ir_node *node)
 {
 	return (const bpf_condjmp_attr_t*) get_irn_generic_attr_const(node);
@@ -231,7 +252,7 @@ int bpf_store_attrs_equal(const ir_node *a, const ir_node *b)
 {
 	const bpf_store_attr_t *attr_a = (bpf_store_attr_t *)get_irn_generic_attr(a);
 	const bpf_store_attr_t *attr_b = (bpf_store_attr_t *)get_irn_generic_attr(b);
-	return attr_a->entity == attr_b->entity && attr_a->offset == attr_b->offset;
+	return attr_a->entity == attr_b->entity && attr_a->offset == attr_b->offset && attr_a->mode == attr_b->mode;
 }
 
 const bpf_const_attr_t *get_bpf_const_attr_const(const ir_node *node)

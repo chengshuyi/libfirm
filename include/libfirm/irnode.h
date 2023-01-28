@@ -20,6 +20,14 @@
 
 #include "begin.h"
 
+// for lwbt
+typedef enum ir_node_us_action {
+   us_action_none,
+   us_action_stack_map = 1,
+
+   us_action_ntop,
+} ir_node_us_action_t;
+
 /**
  * @ingroup ir_graph
  * @defgroup ir_node Nodes
@@ -93,6 +101,15 @@ FIRM_API int irn_visited(const ir_node *node);
 /** Returns 1 if visited >= get_irg_visited(get_irn_irg(node)). Marks the node
  * visited, if it was not. */
 FIRM_API int irn_visited_else_mark(ir_node *node);
+
+FIRM_API void set_irn_typeid(ir_node *node, int typeid);
+FIRM_API int get_irn_typeid(ir_node *node);
+// default false
+FIRM_API void set_irn_kernel_memory(ir_node *node, int kernel_memory);
+FIRM_API int get_irn_kernel_memory(ir_node *node);
+
+FIRM_API void set_irn_us_action(ir_node *node, int action);
+FIRM_API int get_irn_us_action(ir_node *node);
 
 /**
  * Sets the link of a node.

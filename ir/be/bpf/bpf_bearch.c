@@ -89,7 +89,7 @@ static void bpf_generate_code(FILE *output, const char *cup_name)
 			continue;
 
 		struct obstack *obst = be_get_be_obst(irg);
-		// be_birg_from_irg(irg)->isa_link = OALLOCZ(obst, bpf_irg_data_t);
+		be_birg_from_irg(irg)->isa_link = OALLOCZ(obst, bpf_irg_data_t);
 		be_birg_from_irg(irg)->non_ssa_regs = sp_is_non_ssa;
 		bpf_select_instructions(irg);
 
@@ -130,7 +130,10 @@ static void bpf_finish(void)
 
 static void bpf_lower_for_target(void)
 {
-	lower_builtins(0, NULL, NULL);
+	ir_builtin_kind supported[8];
+	size_t s = 0;
+	supported[s++] = ir_bk_bswap;
+	lower_builtins(s, supported, NULL);
 	be_after_irp_transform("lower-builtins");
 
 	/* lower compound param handling */
@@ -139,6 +142,8 @@ static void bpf_lower_for_target(void)
 				   lower_aggregates_as_pointers, NULL,
 				   reset_stateless_abi);
 	be_after_irp_transform("lower-calls");
+
+
 }
 
 static unsigned bpf_get_op_estimated_cost(const ir_node *node)

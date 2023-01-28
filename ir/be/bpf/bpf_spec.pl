@@ -65,6 +65,7 @@ $mode_flags = "mode_Iu";
 	bpf_load_store_attr_t => "",
 	init_bpf_cmp_attr => "",
 	bpf_condjmp_attr_t => "init_bpf_condjmp_attr(res, relation);",
+	bpf_bswap_attr_t => "",
 );
 
 # rematerializable: 表示是否可以重新计算，而不用spill/reload
@@ -221,8 +222,8 @@ Store => {
 		reg => {
 			in_reqs => ["mem", "gp", "gp"],
 			ins => ["mem", "val", "ptr"],
-			attr => "ir_entity *entity, uint16_t offset, bool is_frame_entity",
-			init => "init_bpf_store_attr(res, entity, offset, is_frame_entity);",
+			attr => "ir_entity *entity, ir_mode *mode, uint16_t offset, bool is_frame_entity",
+			init => "init_bpf_store_attr(res, entity, mode, offset, is_frame_entity);",
 		},
 	},
 
@@ -281,5 +282,15 @@ CondJmp => {
 	out_reqs  => [ "exec", "exec" ],
 	outs      => [ "false", "true" ],
 },
+
+BSwap => {
+	state    => "exc_pinned",
+	ins => [ "val" ],
+	in_reqs => [ "gp" ],
+	out_reqs => [ "gp" ],
+	attr => "uint8_t type, uint8_t size",
+	init => "init_bpf_bswap_attr(res, type, size);",
+
+}
 
 );

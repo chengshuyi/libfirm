@@ -86,6 +86,9 @@ ir_node *new_ir_node(dbg_info *db, ir_graph *irg, ir_node *block, ir_op *op,
 	res->mode     = mode;
 	res->irg      = irg;
 	res->node_idx = irg_register_node_idx(irg, res);
+	res->is_kernel_memory = false;
+	res->typeid = -1;
+	res->us_action = us_action_none;
 
 	if (arity < 0) {
 		res->in = NEW_ARR_F(ir_node *, 1);  /* 1: space for block */
@@ -360,6 +363,38 @@ unsigned (get_irn_idx)(const ir_node *node)
 {
 	assert(node->kind == k_ir_node);
 	return get_irn_idx_(node);
+}
+
+void set_irn_typeid(ir_node *node, int typeid)
+{
+	assert(node->kind == k_ir_node);
+	node->typeid = typeid;
+}
+int get_irn_typeid(ir_node *node)
+{
+	assert(node->kind == k_ir_node);
+	return node->typeid;
+}
+void set_irn_kernel_memory(ir_node *node, int kernel_memory)
+{
+	assert(node->kind == k_ir_node);
+	node->is_kernel_memory = kernel_memory;
+}
+int get_irn_kernel_memory(ir_node *node)
+{
+	assert(node->kind == k_ir_node);
+	return node->is_kernel_memory;
+}
+
+void set_irn_us_action(ir_node *node, int action) 
+{
+	assert(node->kind == k_ir_node);
+	node->us_action = action;
+}
+int get_irn_us_action(ir_node *node)
+{
+	assert(node->kind == k_ir_node);
+	return node->us_action;
 }
 
 ir_node *(get_nodes_block)(const ir_node *node)

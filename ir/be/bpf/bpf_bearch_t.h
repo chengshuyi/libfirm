@@ -13,9 +13,18 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <linux/bpf.h>
+
 #include "beirg.h"
 #include "firm_types.h"
 #include "pmap.h"
+
+
+typedef struct bpf_irg_data_t bpf_irg_data_t;
+
+struct bpf_irg_data_t {
+    struct bpf_insn *insns;
+};
 
 void bpf_finish_graph(ir_graph *irg);
 

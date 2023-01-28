@@ -360,13 +360,13 @@ static ir_node *gen_Store(ir_node *node)
 	ir_node *val = get_Store_value(node);
 	ir_node *mem = get_Store_mem(node);
 	ir_node *new_mem = be_transform_node(mem);
-	ir_mode *mode = get_irn_mode(node);
+	ir_mode *mode = get_irn_mode(val);
 	address_t address;
 	match_address(ptr, &address);
 
 	val = be_skip_downconv(val, false);
 	val = be_transform_node(val);
-	return new_bd_bpf_Store_reg(dbgi, new_block, new_mem, val, address.base, address.entity, address.offset, address.is_frame_entity);
+	return new_bd_bpf_Store_reg(dbgi, new_block, new_mem, val, address.base, address.entity, mode, address.offset, address.is_frame_entity);
 }
 
 static ir_node *gen_Jmp(ir_node *node)
@@ -457,6 +457,12 @@ static ir_node *gen_Proj_Proj(ir_node *node)
 			ir_graph *const irg = get_irn_irg(node);
 			return be_get_Start_proj(irg, &bpf_registers[reg_params[arg_num]]);
 		}
+	} else if(is_Call(pred_pred)) {
+		ir_node *const call     = get_Proj_pred(get_Proj_pred(node));
+		ir_node *const new_call = be_transform_node(call);
+		unsigned const pn       = get_Proj_num(node);
+		unsigned const new_pn   = pn_bpf_Call_first_result + pn;
+		return be_new_Proj(new_call, new_pn);
 	}
 	panic("No transformer for %+F -> %+F -> %+F", node, pred, pred_pred);
 }
@@ -525,6 +531,23 @@ static ir_node *gen_Proj_Call(ir_node *node)
 	panic("unexpected Call proj %u", pn);
 }
 
+/**
+ * Transform Proj(Builtin) node.
+ */
+static ir_node *gen_Proj_Builtin(ir_node *proj)
+{
+	ir_node         *pred     = get_Proj_pred(proj);
+	ir_node         *new_pred = be_transform_node(pred);
+	ir_builtin_kind  kind     = get_Builtin_kind(pred);
+	unsigned         pn       = get_Proj_num(proj);
+	switch (kind) {
+	case ir_bk_bswap:
+		assert(pn == pn_Builtin_max+1);
+		return new_pred;
+	}
+	panic("Builtin %s not implemented", get_builtin_kind_name(kind));
+}
+
 static ir_node *gen_Cond(ir_node *node)
 {
 	ir_node    *selector  = get_Cond_selector(node);
@@ -559,6 +582,37 @@ static ir_node *gen_Cmp(ir_node *node)
 	return new_bd_bpf_Cmp_reg(dbgi, block, new_op1, new_op2, 0, false);
 }
 
+static ir_node *gen_bswap(ir_node *node)
+{
+	ir_node  *param     = get_Builtin_param(node, 0);
+	ir_node  *new_param = be_transform_node(param);
+	dbg_info *dbgi      = get_irn_dbg_info(node);
+	ir_node  *new_block = be_transform_nodes_block(node);
+	ir_mode  *mode      = get_irn_mode(param);
+	unsigned  size      = get_mode_size_bits(mode);
+
+#define BPF_TO_BE	0x08	/* convert to big-endian */
+	if (size == 16 || size == 32 || size == 64)
+		return new_bd_bpf_BSwap(dbgi, new_block, new_param, BPF_TO_BE, size);
+
+	panic("unsupport size: %d", size);
+}
+
+/**
+ * Transform Builtin node.
+ */
+static ir_node *gen_Builtin(ir_node *node)
+{
+	ir_builtin_kind kind = get_Builtin_kind(node);
+
+	switch (kind) {
+		case ir_bk_bswap:
+		return gen_bswap(node);
+	}
+
+	panic("Builtin %s not implemented", get_builtin_kind_name(kind));
+}
+
 
 static void bpf_register_transformers(void)
 {
@@ -588,12 +642,14 @@ static void bpf_register_transformers(void)
 	be_set_transform_function(op_Sub, gen_Sub);
 	be_set_transform_function(op_Cond, gen_Cond);
 	be_set_transform_function(op_Cmp, gen_Cmp);
+	be_set_transform_function(op_Builtin, gen_Builtin);
 
 	be_set_transform_proj_function(op_Load, gen_Proj_Load);
 	be_set_transform_proj_function(op_Proj, gen_Proj_Proj);
 	be_set_transform_proj_function(op_Start, gen_Proj_Start);
 	be_set_transform_proj_function(op_Store, gen_Proj_Store);
 	be_set_transform_proj_function(op_Call, gen_Proj_Call);
+	be_set_transform_proj_function(op_Builtin, gen_Proj_Builtin);
 }
 
 static const unsigned ignore_regs[] = {

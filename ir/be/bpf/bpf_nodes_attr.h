@@ -27,6 +27,13 @@ enum sparc_arch_irn_flags_t {
 };
 
 
+typedef struct bpf_bswap_attr_t bpf_bswap_attr_t;
+struct bpf_bswap_attr_t
+{
+	uint8_t type; // defalt is BPF_TO_BE
+	uint8_t size;
+};
+
 typedef struct bpf_cmp_attr_t bpf_cmp_attr_t;
 struct bpf_cmp_attr_t
 {
@@ -82,6 +89,7 @@ typedef struct bpf_store_attr_t bpf_store_attr_t;
 struct bpf_store_attr_t 
 {
 	ir_entity *entity;
+	ir_mode *mode;
 	int16_t offset;
 	bool is_frame_entity;
 };
