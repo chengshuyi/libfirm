@@ -653,7 +653,7 @@ static void bpf_register_transformers(void)
 }
 
 static const unsigned ignore_regs[] = {
-	// REG_R10, // fp
+	REG_R10, // fp
 	// REG_R0,	 // return register
 };
 
