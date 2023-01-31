@@ -173,7 +173,6 @@ FrameAddr => {
 # pseudo BPF_LD_IMM64 insn used to refer to process-local map_fd
 # Memory load, dst_reg = *(uint *) (src_reg + off16)
 Load => {
-	op_flags  => [ "uses_memory" ],
 	state     => "exc_pinned",
 
 	constructors => {
@@ -208,7 +207,6 @@ MapFd => {
 # Memory store, *(uint *) (dst_reg + off16) = src_reg
 # Memory store, *(uint *) (dst_reg + off16) = imm32
 Store => {
-	op_flags  => [ "uses_memory" ],
 	state     => "exc_pinned",
 
 	constructors => {
@@ -235,6 +233,7 @@ Store => {
 # BPF_EMIT_CALL
 Call => {
 	irn_flags => ["has_delay_slot"],
+	state     => "exc_pinned",
 	in_reqs => "...",
 	out_reqs  => "...",
 	outs      => [ "M", "first_result" ],
@@ -284,7 +283,8 @@ CondJmp => {
 },
 
 BSwap => {
-	state    => "exc_pinned",
+	irn_flags => [ "rematerializable" ],
+	# state    => "exc_pinned",
 	ins => [ "val" ],
 	in_reqs => [ "gp" ],
 	out_reqs => [ "gp" ],

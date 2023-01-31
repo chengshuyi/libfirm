@@ -40,22 +40,39 @@ static void bpf_select_instructions(ir_graph *irg)
 	bpf_transform_graph(irg);
 	be_timer_pop(T_CODEGEN);
 	be_dump(DUMP_BE, irg, "code-selection");
+
+	/* do local optimizations (mainly CSE) */
+	local_optimize_graph(irg);
+
+	/* do code placement, to optimize the position of constants */
+	place_code(irg);
 }
 
 static ir_node *bpf_new_spill(ir_node *value, ir_node *after)
 {
-	(void)value;
-	(void)after;
-	panic("spilling not implemented yet");
+	ir_node  *block  = get_block(after);
+	ir_graph *irg    = get_irn_irg(after);
+	ir_node  *frame  = get_irg_frame(irg);
+	ir_node  *mem    = get_irg_no_mem(irg);
+	ir_mode  *mode   = get_irn_mode(value);
+	ir_node *store = new_bd_bpf_Store_reg(NULL, block, mem, value, frame,   NULL, mode, 0, true);
+	arch_add_irn_flags(store, arch_irn_flag_spill);
+	sched_add_after(after, store);
+	return store;
 }
 
 static ir_node *bpf_new_reload(ir_node *value, ir_node *spill,
                                     ir_node *before)
 {
-	(void)value;
-	(void)spill;
-	(void)before;
-	panic("reload not implemented yet");
+	ir_node  *block  = get_block(before);
+	ir_graph *irg    = get_irn_irg(before);
+	ir_node  *frame  = get_irg_frame(irg);
+	ir_mode  *mode   = get_irn_mode(value);
+	ir_node  *load   = new_bd_bpf_Load_reg(NULL, block, spill, frame,  NULL, mode, 0, true);
+	ir_node  *proj   = be_new_Proj(load, pn_bpf_Load_res);
+	arch_add_irn_flags(load, arch_irn_flag_reload);
+	sched_add_before(before, load);
+	return proj;
 }
 
 static const regalloc_if_t bpf_regalloc_if = {
@@ -79,7 +96,6 @@ static const regalloc_if_t bpf_regalloc_if = {
 
 static void bpf_generate_code(FILE *output, const char *cup_name)
 {
-	printf("bpf generate code\n");
 	be_begin(output, cup_name);
 	unsigned *const sp_is_non_ssa = rbitset_alloca(N_BPF_REGISTERS);
 	rbitset_set(sp_is_non_ssa, REG_R10);

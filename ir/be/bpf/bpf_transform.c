@@ -27,13 +27,8 @@
 #include "bpf_cconv.h"
 #include "util.h"
 
-static unsigned const reg_params[] = {
-	REG_R1,
-	REG_R2,
-	REG_R3,
-	REG_R4,
-	REG_R5,
-};
+static calling_convention_t *current_cconv = NULL;
+static be_stack_env_t        stack_env;
 
 DEBUG_ONLY(static firm_dbg_module_t *dbg = NULL;)
 
@@ -388,11 +383,7 @@ static ir_node *gen_Start(ir_node *node)
 		[REG_R10] = BE_START_IGNORE,
 	};
 
-	/* function parameters in registers */
-	for (size_t i = 0; i != ARRAY_SIZE(reg_params); ++i)
-	{
-		outs[reg_params[i]] = BE_START_REG;
-	}
+	outs[REG_R1] = BE_START_REG;
 
 	ir_graph *const irg = get_irn_irg(node);
 	return be_new_Start(irg, outs);
@@ -452,10 +443,10 @@ static ir_node *gen_Proj_Proj(ir_node *node)
 		{
 			// assume everything is passed in gp registers
 			unsigned arg_num = get_Proj_num(node);
-			if (arg_num >= ARRAY_SIZE(reg_params))
-				panic("more than 5 arguments not supported");
+			if (arg_num >= 1)
+				panic("more than 1 arguments not supported");
 			ir_graph *const irg = get_irn_irg(node);
-			return be_get_Start_proj(irg, &bpf_registers[reg_params[arg_num]]);
+			return be_get_Start_proj(irg, &bpf_registers[REG_R1]);
 		}
 	} else if(is_Call(pred_pred)) {
 		ir_node *const call     = get_Proj_pred(get_Proj_pred(node));
@@ -680,9 +671,20 @@ void bpf_transform_graph(ir_graph *irg)
 
 	bpf_register_transformers();
 
-	setup_calling_convention(irg);
+
+	be_stack_init(&stack_env);
+	ir_entity *entity = get_irg_entity(irg);
+	current_cconv = bpf_decide_calling_convention(irg, get_entity_type(entity));
 
 	be_transform_graph(irg, NULL);
+
+	be_stack_finish(&stack_env);
+	bpf_free_calling_convention(current_cconv);
+
+	/* do code placement, to optimize the position of constants */
+	place_code(irg);
+	/* backend expects outedges to be always on */
+	assure_edges(irg);
 }
 
 void bpf_init_transform(void)
