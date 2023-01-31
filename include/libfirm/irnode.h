@@ -46,6 +46,7 @@ typedef enum ir_node_us_action {
    us_action_stack_map_depth20,
    us_action_ntop,
    us_action_tcpstate,
+   us_action_tcpflags,
 } ir_node_us_action_t;
 
 /**
